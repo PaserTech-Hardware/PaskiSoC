@@ -1,0 +1,637 @@
+diff -ruN u-boot-2021.07/arch/riscv/cpu/cpu.c uboot-2021.07-paski/arch/riscv/cpu/cpu.c
+--- u-boot-2021.07/arch/riscv/cpu/cpu.c	2021-07-05 23:11:28.000000000 +0800
++++ uboot-2021.07-paski/arch/riscv/cpu/cpu.c	2021-07-26 03:39:14.516000000 +0800
+@@ -97,19 +97,24 @@
+ 		csr_write(CSR_FCSR, 0);
+ 	}
+ 
++/*
+ 	if (CONFIG_IS_ENABLED(RISCV_MMODE)) {
++*/
+ 		/*
+ 		 * Enable perf counters for cycle, time,
+ 		 * and instret counters only
+ 		 */
++/*
+ #ifdef CONFIG_RISCV_PRIV_1_9
+ 		csr_write(CSR_MSCOUNTEREN, GENMASK(2, 0));
+ 		csr_write(CSR_MUCOUNTEREN, GENMASK(2, 0));
+ #else
+ 		csr_write(CSR_MCOUNTEREN, GENMASK(2, 0));
+ #endif
++*/
+ 
+ 		/* Disable paging */
++/*
+ 		if (supports_extension('s'))
+ #ifdef CONFIG_RISCV_PRIV_1_9
+ 			csr_read_clear(CSR_MSTATUS, SR_VM);
+@@ -117,6 +122,7 @@
+ 			csr_write(CSR_SATP, 0);
+ #endif
+ 	}
++*/
+ 
+ #if CONFIG_IS_ENABLED(SMP)
+ 	ret = riscv_init_ipi();
+diff -ruN u-boot-2021.07/arch/riscv/dts/Makefile uboot-2021.07-paski/arch/riscv/dts/Makefile
+--- u-boot-2021.07/arch/riscv/dts/Makefile	2021-07-05 23:11:28.000000000 +0800
++++ uboot-2021.07-paski/arch/riscv/dts/Makefile	2021-07-26 03:39:14.516000000 +0800
+@@ -6,6 +6,7 @@
+ dtb-$(CONFIG_TARGET_SIFIVE_UNLEASHED) += hifive-unleashed-a00.dtb
+ dtb-$(CONFIG_TARGET_SIFIVE_UNMATCHED) += hifive-unmatched-a00.dtb
+ dtb-$(CONFIG_TARGET_SIPEED_MAIX) += k210-maix-bit.dtb
++dtb-$(CONFIG_TARGET_ANGELIC47_PASKISOC) += paskisoc-angelic47.dtb
+ 
+ targets += $(dtb-y)
+ 
+diff -ruN u-boot-2021.07/arch/riscv/dts/paskisoc-angelic47.dts uboot-2021.07-paski/arch/riscv/dts/paskisoc-angelic47.dts
+--- u-boot-2021.07/arch/riscv/dts/paskisoc-angelic47.dts	1970-01-01 08:00:00.000000000 +0800
++++ uboot-2021.07-paski/arch/riscv/dts/paskisoc-angelic47.dts	2021-07-26 03:39:14.516000000 +0800
+@@ -0,0 +1,21 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++ */
++
++/dts-v1/;
++
++#include "paskisoc.dtsi"
++
++/ {
++	model = "Paski-SOC 1.0 By Angelic47";
++	compatible = "angelic47,paskisoc";
++
++	chosen {
++		stdout-path = "serial0:115200";
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
+diff -ruN u-boot-2021.07/arch/riscv/dts/paskisoc.dtsi uboot-2021.07-paski/arch/riscv/dts/paskisoc.dtsi
+--- u-boot-2021.07/arch/riscv/dts/paskisoc.dtsi	1970-01-01 08:00:00.000000000 +0800
++++ uboot-2021.07-paski/arch/riscv/dts/paskisoc.dtsi	2021-07-26 03:39:14.516000000 +0800
+@@ -0,0 +1,54 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++ */
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	compatible = "angelic47,paskisoc";
++
++	aliases {
++		cpu0 = &cpu0;
++		serial0 = &uart0;
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		timebase-frequency = <50000000>;
++		cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "angelic47,paskisoc", "spinalhdl,vexriscv", "riscv";
++			reg = <0>;
++			riscv,isa = "rv32ima";
++			i-cache-block-size = <64>;
++			i-cache-size = <0x8000>;
++		};
++	};
++
++	sram: memory@40000000 {
++		device_type = "memory";
++		compatible = "angelic47,paskisoc-sram";
++		reg = <0x40000000 0x2000000>;
++		reg-names = "sram0";
++		u-boot,dm-pre-reloc;
++	};
++
++	soc {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "angelic47,paskisoc-soc", "simple-bus";
++		ranges;
++		
++		bootmem: memory@80000000 {
++			reg = <0x80000000 0x2000>;
++		};
++
++		uart0: serial@F0001000 {
++			compatible = "angelic47,paskisoc", "spinalhdl,serial";
++			reg = <0xF0001000 0x1000>;
++			status = "disabled";
++		};
++	};
++};
+diff -ruN u-boot-2021.07/arch/riscv/Kconfig uboot-2021.07-paski/arch/riscv/Kconfig
+--- u-boot-2021.07/arch/riscv/Kconfig	2021-07-05 23:11:28.000000000 +0800
++++ uboot-2021.07-paski/arch/riscv/Kconfig	2021-07-26 03:39:14.512000000 +0800
+@@ -26,6 +26,9 @@
+ config TARGET_SIPEED_MAIX
+ 	bool "Support Sipeed Maix Board"
+ 
++config TARGET_ANGELIC47_PASKISOC
++	bool "Support Paski SOC Boards By Angelic47"
++
+ endchoice
+ 
+ config SYS_ICACHE_OFF
+@@ -55,6 +58,7 @@
+ 	  Do not enable data cache in SPL.
+ 
+ # board-specific options below
++source "board/angelic47/paskisoc/Kconfig"
+ source "board/AndesTech/ax25-ae350/Kconfig"
+ source "board/emulation/qemu-riscv/Kconfig"
+ source "board/microchip/mpfs_icicle/Kconfig"
+diff -ruN u-boot-2021.07/board/angelic47/paskisoc/Kconfig uboot-2021.07-paski/board/angelic47/paskisoc/Kconfig
+--- u-boot-2021.07/board/angelic47/paskisoc/Kconfig	1970-01-01 08:00:00.000000000 +0800
++++ uboot-2021.07-paski/board/angelic47/paskisoc/Kconfig	2021-07-26 03:39:14.804000000 +0800
+@@ -0,0 +1,37 @@
++# SPDX-License-Identifier: GPL-2.0+
++# Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++
++if TARGET_ANGELIC47_PASKISOC
++
++config SYS_BOARD
++	default "paskisoc"
++
++config SYS_VENDOR
++	default "angelic47"
++
++config SYS_CPU
++	default "generic"
++
++config SYS_CONFIG_NAME
++	default "angelic47-paskisoc"
++
++config SYS_HZ
++	default 50000000
++
++config SYS_TEXT_BASE
++	default 0x40000020
++
++config DEFAULT_DEVICE_TREE
++	default "paskisoc-angelic47"
++
++config NR_CPUS
++	default 1
++
++config NR_DRAM_BANKS
++	default 1
++
++config BOARD_SPECIFIC_OPTIONS
++	def_bool y
++	imply BOARD_LATE_INIT
++
++endif
+diff -ruN u-boot-2021.07/board/angelic47/paskisoc/Makefile uboot-2021.07-paski/board/angelic47/paskisoc/Makefile
+--- u-boot-2021.07/board/angelic47/paskisoc/Makefile	1970-01-01 08:00:00.000000000 +0800
++++ uboot-2021.07-paski/board/angelic47/paskisoc/Makefile	2021-07-26 03:39:14.804000000 +0800
+@@ -0,0 +1,5 @@
++# SPDX-License-Identifier: GPL-2.0+
++#
++# Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++
++obj-y += paskisoc.o
+diff -ruN u-boot-2021.07/board/angelic47/paskisoc/paskisoc.c uboot-2021.07-paski/board/angelic47/paskisoc/paskisoc.c
+--- u-boot-2021.07/board/angelic47/paskisoc/paskisoc.c	1970-01-01 08:00:00.000000000 +0800
++++ uboot-2021.07-paski/board/angelic47/paskisoc/paskisoc.c	2021-07-26 03:39:14.804000000 +0800
+@@ -0,0 +1,30 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++ */
++
++#include <common.h>
++#include <clk.h>
++#include <dm.h>
++#include <fdt_support.h>
++#include <asm/io.h>
++
++phys_size_t get_effective_memsize(void)
++{
++	return CONFIG_SYS_SDRAM_SIZE;
++}
++
++int board_early_init_f(void)
++{
++	return 0;
++}
++
++int board_init(void)
++{
++	return 0;
++}
++
++ulong get_tbclk(void)
++{
++	return CONFIG_SYS_HZ;
++}
+diff -ruN u-boot-2021.07/configs/angelic47_paskisoc_defconfig uboot-2021.07-paski/configs/angelic47_paskisoc_defconfig
+--- u-boot-2021.07/configs/angelic47_paskisoc_defconfig	1970-01-01 08:00:00.000000000 +0800
++++ uboot-2021.07-paski/configs/angelic47_paskisoc_defconfig	2021-07-26 03:39:14.824000000 +0800
+@@ -0,0 +1,161 @@
++CONFIG_CREATE_ARCH_SYMLINK=y
++CONFIG_LINKER_LIST_ALIGN=4
++CONFIG_RISCV=y
++CONFIG_SYS_ARCH="riscv"
++CONFIG_SYS_CPU="generic"
++CONFIG_SYS_VENDOR="angelic47"
++CONFIG_SYS_BOARD="paskisoc"
++CONFIG_SYS_CONFIG_NAME="angelic47-paskisoc"
++CONFIG_USE_ARCH_MEMCPY=y
++CONFIG_USE_ARCH_MEMSET=y
++CONFIG_SYS_TEXT_BASE=0x40000020
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_BOARD_SPECIFIC_OPTIONS=y
++CONFIG_ENV_SIZE=0x1f000
++CONFIG_DEFAULT_DEVICE_TREE="paskisoc-angelic47"
++CONFIG_ERR_PTR_OFFSET=0x0
++CONFIG_BOOTSTAGE_STASH_ADDR=0
++CONFIG_DEBUG_UART_BASE=0xF0001000
++CONFIG_DEBUG_UART_CLOCK=115200
++CONFIG_IDENT_STRING=" Dev 1.0"
++CONFIG_BUILD_TARGET=""
++CONFIG_32BIT=y
++CONFIG_DEBUG_UART=y
++CONFIG_TARGET_ANGELIC47_PASKISOC=y
++CONFIG_SYS_HZ=50000000
++CONFIG_NR_CPUS=1
++CONFIG_ARCH_RV32I=y
++CONFIG_CMODEL_MEDLOW=y
++CONFIG_RISCV_MMODE=y
++CONFIG_RISCV_ISA_A=y
++CONFIG_SHOW_REGS=y
++CONFIG_RISCV_PRIV_1_9=y
++CONFIG_STACK_SIZE_SHIFT=14
++CONFIG_USE_ARCH_MEMMOVE=y
++CONFIG_LOCALVERSION=" Paski RISC-V SOC"
++CONFIG_LOCALVERSION_AUTO=y
++CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_CC_HAS_ASM_INLINE=y
++CONFIG_SYS_MALLOC_F=y
++CONFIG_EXPERT=y
++CONFIG_SYS_MALLOC_CLEAR_ON_INIT=y
++CONFIG_PLATFORM_ELFENTRY="_start"
++CONFIG_STACK_SIZE=0x1000000
++CONFIG_SYS_SRAM_BASE=0x0
++CONFIG_SYS_SRAM_SIZE=0x0
++CONFIG_LEGACY_IMAGE_FORMAT=y
++CONFIG_SYS_EXTRA_OPTIONS=""
++CONFIG_HAVE_SYS_TEXT_BASE=y
++CONFIG_ARCH_FIXUP_FDT_MEMORY=y
++CONFIG_BOOTSTAGE_STASH_SIZE=0x1000
++CONFIG_SD_BOOT=y
++CONFIG_AUTOBOOT=y
++CONFIG_BOOTDELAY=5
++CONFIG_BOOTARGS_SUBST=y
++CONFIG_DEFAULT_FDT_FILE=""
++CONFIG_MENU=y
++CONFIG_LOGLEVEL=6
++CONFIG_SPL_LOGLEVEL=6
++CONFIG_TPL_LOGLEVEL=6
++CONFIG_DISPLAY_BOARDINFO=y
++CONFIG_SPL_SYS_STACK_F_CHECK_BYTE=0xaa
++CONFIG_CMDLINE=y
++CONFIG_CMDLINE_EDITING=y
++CONFIG_AUTO_COMPLETE=y
++CONFIG_SYS_LONGHELP=y
++CONFIG_SYS_PROMPT="PaskiBl >>> "
++CONFIG_SYS_XTRACE=y
++CONFIG_BUILD_BIN2C=y
++CONFIG_CMD_BDI=y
++CONFIG_CMD_CONFIG=y
++CONFIG_CMD_CONSOLE=y
++CONFIG_CMD_BOOTD=y
++CONFIG_CMD_BOOTM=y
++CONFIG_CMD_BOOTZ=y
++CONFIG_BOOTM_LINUX=y
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_ELF=y
++CONFIG_CMD_FDT=y
++CONFIG_CMD_GO=y
++CONFIG_CMD_RUN=y
++CONFIG_CMD_IMI=y
++CONFIG_CMD_XIMG=y
++CONFIG_CMD_EDITENV=y
++CONFIG_CMD_SAVEENV=y
++CONFIG_CMD_MEMORY=y
++CONFIG_CMD_DM=y
++CONFIG_CMD_LOADB=y
++CONFIG_CMD_SPI=y
++CONFIG_DEFAULT_SPI_BUS=0
++CONFIG_DEFAULT_SPI_MODE=0
++CONFIG_CMD_ECHO=y
++CONFIG_CMD_ITEST=y
++CONFIG_CMD_SOURCE=y
++CONFIG_CMD_SETEXPR=y
++CONFIG_CMD_CACHE=y
++CONFIG_MTDIDS_DEFAULT=""
++CONFIG_MTDPARTS_DEFAULT=""
++CONFIG_SUPPORT_OF_CONTROL=y
++CONFIG_DTC=y
++CONFIG_OF_CONTROL=y
++CONFIG_OF_SEPARATE=y
++CONFIG_ENV_SUPPORT=y
++CONFIG_SAVEENV=y
++CONFIG_ENV_IS_NOWHERE=y
++CONFIG_DM=y
++CONFIG_DM_WARN=y
++CONFIG_DM_DEVICE_REMOVE=y
++CONFIG_DM_STDIO=y
++CONFIG_DM_SEQ_ALIAS=y
++CONFIG_SIMPLE_BUS=y
++CONFIG_OF_TRANSLATE=y
++CONFIG_DM_DEV_READ_INLINE=y
++CONFIG_BLK=y
++CONFIG_HAVE_BLOCK_DEVICE=y
++CONFIG_BLOCK_CACHE=y
++CONFIG_MMC=y
++CONFIG_MMC_WRITE=y
++CONFIG_DM_MMC=y
++CONFIG_MMC_SPI=y
++CONFIG_MMC_SPI_CRC_ON=y
++CONFIG_MMC_QUIRKS=y
++CONFIG_MMC_HW_PARTITIONING=y
++CONFIG_MMC_VERBOSE=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH=y
++CONFIG_SF_DEFAULT_BUS=0
++CONFIG_SF_DEFAULT_CS=0
++CONFIG_SF_DEFAULT_MODE=3
++CONFIG_SF_DEFAULT_SPEED=1000000
++CONFIG_SPI_FLASH_UNLOCK_ALL=y
++CONFIG_SPI_FLASH_USE_4K_SECTORS=y
++CONFIG_BAUDRATE=115200
++CONFIG_REQUIRE_SERIAL_CONSOLE=y
++CONFIG_SERIAL_PRESENT=y
++CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_SEARCH_ALL=y
++CONFIG_DEBUG_UART_SPINALHDL=y
++CONFIG_DEBUG_UART_SHIFT=0
++CONFIG_SPINALHDL_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_SPI_MEM=y
++CONFIG_WATCHDOG_TIMEOUT_MSECS=60000
++CONFIG_PRINTF=y
++CONFIG_SPRINTF=y
++CONFIG_STRTO=y
++CONFIG_REGEX=y
++CONFIG_BITREVERSE=y
++CONFIG_LZMA=y
++CONFIG_LZO=y
++CONFIG_GZIP=y
++CONFIG_BZIP2=y
++CONFIG_ZLIB=y
++CONFIG_OF_LIBFDT=y
++CONFIG_OF_LIBFDT_ASSUME_MASK=0
++CONFIG_LIB_ELF=y
++CONFIG_LMB=y
++CONFIG_LMB_USE_MAX_REGIONS=y
++CONFIG_LMB_MAX_REGIONS=8
++CONFIG_MKIMAGE_DTC_PATH="dtc"
+diff -ruN u-boot-2021.07/drivers/serial/Kconfig uboot-2021.07-paski/drivers/serial/Kconfig
+--- u-boot-2021.07/drivers/serial/Kconfig	2021-07-05 23:11:28.000000000 +0800
++++ uboot-2021.07-paski/drivers/serial/Kconfig	2021-07-26 03:39:15.080000000 +0800
+@@ -427,6 +427,17 @@
+ 	  driver will be available until the real driver model serial is
+ 	  running.
+ 
++config DEBUG_UART_SPINALHDL
++	bool "UART driver for SpinalHDL UartCtrl IP Core"
++	depends on SPINALHDL_SERIAL
++	help
++	  Select this to enable a debug UART using the UART driver for
++	  SpinalHDL UartCtrl IP Core.
++	  You will need to provide parameters to make this work. The
++	  driver will be available until the real driver model serial is
++	  running.
++
++
+ endchoice
+ 
+ config DEBUG_UART_BASE
+@@ -884,6 +895,12 @@
+ 	  The UART driver for MediaTek MT7620 and earlier SoCs is *NOT*
+ 	  compatible with the ns16550a UART.
+ 
++config SPINALHDL_SERIAL
++	bool "UART driver for SpinalHDL UartCtrl IP Core"
++	depends on DM_SERIAL
++	help
++	  Select this to enable UART support for SpinalHDL Apb3 UartCtrl IP.
++
+ config MPC8XX_CONS
+ 	bool "Console driver for MPC8XX"
+ 	depends on MPC8xx
+diff -ruN u-boot-2021.07/drivers/serial/Makefile uboot-2021.07-paski/drivers/serial/Makefile
+--- u-boot-2021.07/drivers/serial/Makefile	2021-07-05 23:11:28.000000000 +0800
++++ uboot-2021.07-paski/drivers/serial/Makefile	2021-07-26 03:39:15.080000000 +0800
+@@ -74,6 +74,7 @@
+ obj-$(CONFIG_MT7620_SERIAL) += serial_mt7620.o
+ obj-$(CONFIG_SIFIVE_SERIAL) += serial_sifive.o
+ obj-$(CONFIG_XEN_SERIAL) += serial_xen.o
++obj-$(CONFIG_SPINALHDL_SERIAL) += serial_spinalhdl.o
+ 
+ ifndef CONFIG_SPL_BUILD
+ obj-$(CONFIG_USB_TTY) += usbtty.o
+diff -ruN u-boot-2021.07/drivers/serial/serial_spinalhdl.c uboot-2021.07-paski/drivers/serial/serial_spinalhdl.c
+--- u-boot-2021.07/drivers/serial/serial_spinalhdl.c	1970-01-01 08:00:00.000000000 +0800
++++ uboot-2021.07-paski/drivers/serial/serial_spinalhdl.c	2021-07-26 03:39:15.084000000 +0800
+@@ -0,0 +1,157 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++ */
++
++#include <common.h>
++#include <clock_legacy.h>
++#include <dm.h>
++#include <div64.h>
++#include <errno.h>
++#include <serial.h>
++#include <asm/io.h>
++#include <asm/types.h>
++#include <dm/pinctrl.h>
++#include <linux/bitops.h>
++
++typedef struct
++{
++  volatile uint32_t DATA;
++  volatile uint32_t STATUS;
++  volatile uint32_t CLOCK_DIVIDER;
++  volatile uint32_t FRAME_CONFIG;
++} Uart_Reg;
++
++enum UartDataLength {BITS_8 = 8};
++enum UartParity {NONE = 0,EVEN = 1,ODD = 2};
++enum UartStop {ONE = 0,TWO = 1};
++
++typedef struct {
++	enum UartDataLength dataLength;
++	enum UartParity parity;
++	enum UartStop stop;
++	uint32_t clockDivider;
++} Uart_Config;
++
++uint32_t spinalhdl_uart_writeAvailability(Uart_Reg *reg){
++	return (reg->STATUS >> 16) & 0xFF;
++}
++
++uint32_t spinalhdl_uart_readOccupancy(Uart_Reg *reg){
++	return reg->STATUS >> 24;
++}
++
++struct spinalhdl_serial_priv {
++	Uart_Reg *reg;
++};
++
++static int spinalhdl_serial_setbrg(struct udevice *dev, int baudrate)
++{
++	return 0;
++}
++
++static int spinalhdl_serial_putc(struct udevice *dev, const char c)
++{
++	struct spinalhdl_serial_priv *priv = dev_get_plat(dev);
++	
++	if(spinalhdl_uart_writeAvailability(priv->reg) == 0)
++		return -EAGAIN;
++	priv->reg->DATA = c;
++	return 0;
++}
++
++static int spinalhdl_serial_getc(struct udevice *dev)
++{
++	struct spinalhdl_serial_priv *priv = dev_get_plat(dev);
++	
++	if(spinalhdl_uart_readOccupancy(priv->reg) == 0)
++		return -EAGAIN;
++	return (priv->reg->DATA) & 0xff;
++}
++
++static int spinalhdl_serial_pending(struct udevice *dev, bool input)
++{
++	struct spinalhdl_serial_priv *priv = dev_get_plat(dev);
++	
++	if (input)
++	{
++		if(spinalhdl_uart_readOccupancy(priv->reg) == 0)
++			return 0;
++		return 1;
++	}
++	else
++	{
++		if(spinalhdl_uart_writeAvailability(priv->reg) == 0)
++			return 1;
++		return 0;
++	}
++}
++
++static int spinalhdl_serial_probe(struct udevice *dev)
++{
++	struct spinalhdl_serial_priv *priv = dev_get_plat(dev);
++	fdt_addr_t addr;
++
++	addr = dev_read_addr(dev);
++	if (addr == FDT_ADDR_T_NONE)
++		return -EINVAL;
++
++	priv->reg = (Uart_Reg *)map_physmem(addr, 0x1000,
++				 MAP_NOCACHE);
++	
++	return 0;
++}
++
++static int spinalhdl_serial_ofdata_to_platdata(struct udevice *dev)
++{
++	struct spinalhdl_serial_priv *priv = dev_get_plat(dev);
++
++	priv->reg = dev_read_addr(dev);
++	if (priv->reg == FDT_ADDR_T_NONE)
++		return -EINVAL;
++
++	return 0;
++}
++
++static const struct dm_serial_ops spinalhdl_serial_ops = {
++	.putc = spinalhdl_serial_putc,
++	.pending = spinalhdl_serial_pending,
++	.getc = spinalhdl_serial_getc,
++	.setbrg = spinalhdl_serial_setbrg,
++};
++
++static const struct udevice_id spinalhdl_serial_ids[] = {
++	{ .compatible = "spinalhdl,serial" },
++	{ }
++};
++
++U_BOOT_DRIVER(serial_spinalhdl) = {
++	.name   = "serial_spinalhdl",
++	.id = UCLASS_SERIAL,
++	.of_match = spinalhdl_serial_ids,
++	.of_to_plat = spinalhdl_serial_ofdata_to_platdata,
++	.plat_auto = sizeof(struct spinalhdl_serial_priv),
++	.probe = spinalhdl_serial_probe,
++	.ops    = &spinalhdl_serial_ops,
++};
++
++#ifdef CONFIG_DEBUG_UART_SPINALHDL
++
++#include <debug_uart.h>
++
++static inline void _debug_uart_init(void)
++{
++	// no need to do anything
++}
++
++static inline void _debug_uart_putc(int c)
++{
++	Uart_Reg *reg = (Uart_Reg *)CONFIG_DEBUG_UART_BASE;
++
++	while(spinalhdl_uart_writeAvailability(reg) == 0);
++	reg->DATA = c & 0xff;
++}
++
++DEBUG_UART_FUNCS
++
++#endif
+diff -ruN u-boot-2021.07/include/configs/angelic47-paskisoc.h uboot-2021.07-paski/include/configs/angelic47-paskisoc.h
+--- u-boot-2021.07/include/configs/angelic47-paskisoc.h	1970-01-01 08:00:00.000000000 +0800
++++ uboot-2021.07-paski/include/configs/angelic47-paskisoc.h	2021-07-26 03:39:15.212000000 +0800
+@@ -0,0 +1,27 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++ */
++
++#ifndef CONFIGS_ANGELIC47_PASKISOC_H
++#define CONFIGS_ANGELIC47_PASKISOC_H
++
++#include <linux/sizes.h>
++
++#define CONFIG_SYS_LOAD_ADDR 0x40000020
++/* Start just below the second bank so we don't clobber it during reloc */
++#define CONFIG_SYS_INIT_SP_ADDR 0x41FFFFFF
++#define CONFIG_SYS_MALLOC_LEN SZ_128K
++#define CONFIG_SYS_CACHELINE_SIZE 64
++
++#define CONFIG_SYS_SDRAM_BASE 0x40000000
++#define CONFIG_SYS_SDRAM_SIZE SZ_32M
++
++#define CONFIG_PRAM SZ_4K
++
++#ifndef CONFIG_EXTRA_ENV_SETTINGS
++#define CONFIG_EXTRA_ENV_SETTINGS \
++	"loadaddr=0x40000020\0"
++#endif
++
++#endif /* CONFIGS_ANGELIC47_PASKISOC_H */

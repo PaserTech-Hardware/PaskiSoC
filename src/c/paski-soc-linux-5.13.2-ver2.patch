@@ -1,0 +1,2151 @@
+diff -ruN linux-5.13.2/arch/riscv/boot/dts/angelic47/Makefile linux-5.13.2-paski2/arch/riscv/boot/dts/angelic47/Makefile
+--- linux-5.13.2/arch/riscv/boot/dts/angelic47/Makefile	1970-01-01 08:00:00.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/boot/dts/angelic47/Makefile	2021-08-13 10:31:07.894572275 +0800
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0
++dtb-$(CONFIG_SOC_ANGELIC47_PASKI) += paskisoc-angelic47.dtb
++obj-$(CONFIG_BUILTIN_DTB) += $(addsuffix .o, $(dtb-y))
+diff -ruN linux-5.13.2/arch/riscv/boot/dts/angelic47/paskisoc-angelic47.dts linux-5.13.2-paski2/arch/riscv/boot/dts/angelic47/paskisoc-angelic47.dts
+--- linux-5.13.2/arch/riscv/boot/dts/angelic47/paskisoc-angelic47.dts	1970-01-01 08:00:00.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/boot/dts/angelic47/paskisoc-angelic47.dts	2021-08-13 10:31:07.894572275 +0800
+@@ -0,0 +1,42 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++ */
++
++/dts-v1/;
++
++#include "paskisoc.dtsi"
++
++/ {
++	model = "Paski-SOC 1.0 By Angelic47";
++	compatible = "angelic47,paskisoc";
++
++	chosen {
++		stdout-path = "serial0:115200";
++	};
++	
++	sram: memory@40000000 {
++		device_type = "memory";
++		compatible = "angelic47,paskisoc-sram";
++		reg = <0x40000000 0x1C00000>;
++		reg-names = "sram0";
++		u-boot,dm-pre-reloc;
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&spi0 {
++	status = "okay";
++	
++	mmc: mmc@0 {
++		compatible = "mmc-spi-slot";
++		reg = <0>;
++		spi-max-frequency = <25000000>;
++		voltage-ranges = <3300 3300>;
++		disable-wp;
++		broken-cd;
++	};
++};
+diff -ruN linux-5.13.2/arch/riscv/boot/dts/angelic47/paskisoc.dtsi linux-5.13.2-paski2/arch/riscv/boot/dts/angelic47/paskisoc.dtsi
+--- linux-5.13.2/arch/riscv/boot/dts/angelic47/paskisoc.dtsi	1970-01-01 08:00:00.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/boot/dts/angelic47/paskisoc.dtsi	2021-08-13 10:31:07.894572275 +0800
+@@ -0,0 +1,67 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++ */
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	compatible = "angelic47,paskisoc";
++
++	aliases {
++		cpu0 = &cpu0;
++		serial0 = &uart0;
++		spi0 = &spi0;
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		timebase-frequency = <50000000>;
++		cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "angelic47,paskisoc", "spinalhdl,vexriscv", "riscv";
++			reg = <0>;
++			riscv,isa = "rv32ima";
++			i-cache-block-size = <32>;
++			i-cache-sets = <128>;
++			i-cache-size = <0x1000>;
++			d-cache-block-size = <32>;
++			d-cache-sets = <128>;
++			d-cache-size = <0x1000>;
++			cache-level = <1>;
++			mmu-type = "riscv,sv32";
++			cpu0_intc: interrupt-controller {
++				#interrupt-cells = <1>;
++				interrupt-controller;
++				compatible = "riscv,cpu-intc";
++			};
++		};
++	};
++
++	soc {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "angelic47,paskisoc-soc", "simple-bus";
++		ranges;
++		
++		bootmem: memory@80000000 {
++			reg = <0x80000000 0x2000>;
++		};
++
++		uart0: serial@F0001000 {
++			compatible = "angelic47,paskisoc", "spinalhdl,serial";
++			reg = <0xF0001000 0x1000>;
++			status = "disabled";
++		};
++		
++		spi0: spi@F0002000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "angelic47,paskisoc", "spinalhdl,spinalhdl-spi";
++			reg = <0xF0002000 0x1000>;
++			num-cs = <1>;
++			status = "disabled";
++		};
++	};
++};
+diff -ruN linux-5.13.2/arch/riscv/boot/dts/Makefile linux-5.13.2-paski2/arch/riscv/boot/dts/Makefile
+--- linux-5.13.2/arch/riscv/boot/dts/Makefile	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/boot/dts/Makefile	2021-08-13 10:31:07.862571921 +0800
+@@ -2,5 +2,6 @@
+ subdir-y += sifive
+ subdir-$(CONFIG_SOC_CANAAN_K210_DTB_BUILTIN) += canaan
+ subdir-y += microchip
++subdir-y += angelic47
+ 
+ obj-$(CONFIG_BUILTIN_DTB) := $(addsuffix /, $(subdir-y))
+diff -ruN linux-5.13.2/arch/riscv/configs/angelic47_paskisoc_defconfig linux-5.13.2-paski2/arch/riscv/configs/angelic47_paskisoc_defconfig
+--- linux-5.13.2/arch/riscv/configs/angelic47_paskisoc_defconfig	1970-01-01 08:00:00.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/configs/angelic47_paskisoc_defconfig	2021-08-13 10:44:56.000000000 +0800
+@@ -0,0 +1,339 @@
++CONFIG_CC_IS_GCC=y
++CONFIG_GCC_VERSION=100300
++CONFIG_CLANG_VERSION=0
++CONFIG_AS_IS_GNU=y
++CONFIG_AS_VERSION=23200
++CONFIG_LD_IS_BFD=y
++CONFIG_LD_VERSION=23200
++CONFIG_LLD_VERSION=0
++CONFIG_CC_CAN_LINK=y
++CONFIG_CC_CAN_LINK_STATIC=y
++CONFIG_CC_HAS_ASM_GOTO=y
++CONFIG_CC_HAS_ASM_INLINE=y
++CONFIG_IRQ_WORK=y
++CONFIG_THREAD_INFO_IN_TASK=y
++CONFIG_BROKEN_ON_SMP=y
++CONFIG_INIT_ENV_ARG_LIMIT=32
++CONFIG_COMPILE_TEST=y
++CONFIG_LOCALVERSION=" Paski RISC-V"
++CONFIG_BUILD_SALT=""
++CONFIG_DEFAULT_INIT=""
++CONFIG_DEFAULT_HOSTNAME="paski"
++CONFIG_SWAP=y
++CONFIG_CROSS_MEMORY_ATTACH=y
++CONFIG_HAVE_ARCH_AUDITSYSCALL=y
++CONFIG_GENERIC_IRQ_SHOW=y
++CONFIG_IRQ_DOMAIN=y
++CONFIG_HANDLE_DOMAIN_IRQ=y
++CONFIG_SPARSE_IRQ=y
++CONFIG_GENERIC_IRQ_MULTI_HANDLER=y
++CONFIG_ARCH_CLOCKSOURCE_INIT=y
++CONFIG_GENERIC_CLOCKEVENTS=y
++CONFIG_HZ_PERIODIC=y
++CONFIG_HAVE_EBPF_JIT=y
++CONFIG_PREEMPT_NONE=y
++CONFIG_TICK_CPU_ACCOUNTING=y
++CONFIG_CPU_ISOLATION=y
++CONFIG_TINY_RCU=y
++CONFIG_SRCU=y
++CONFIG_TINY_SRCU=y
++CONFIG_LOG_BUF_SHIFT=17
++CONFIG_PRINTK_SAFE_LOG_BUF_SHIFT=13
++CONFIG_GENERIC_SCHED_CLOCK=y
++CONFIG_NAMESPACES=y
++CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y
++CONFIG_SYSCTL=y
++CONFIG_SYSCTL_EXCEPTION_TRACE=y
++CONFIG_EXPERT=y
++CONFIG_MULTIUSER=y
++CONFIG_SGETMASK_SYSCALL=y
++CONFIG_SYSFS_SYSCALL=y
++CONFIG_FHANDLE=y
++CONFIG_POSIX_TIMERS=y
++CONFIG_PRINTK=y
++CONFIG_BUG=y
++CONFIG_BASE_FULL=y
++CONFIG_FUTEX=y
++CONFIG_FUTEX_PI=y
++CONFIG_HAVE_FUTEX_CMPXCHG=y
++CONFIG_EPOLL=y
++CONFIG_SIGNALFD=y
++CONFIG_TIMERFD=y
++CONFIG_EVENTFD=y
++CONFIG_SHMEM=y
++CONFIG_AIO=y
++CONFIG_IO_URING=y
++CONFIG_ADVISE_SYSCALLS=y
++CONFIG_MEMBARRIER=y
++CONFIG_KALLSYMS=y
++CONFIG_KALLSYMS_BASE_RELATIVE=y
++CONFIG_EMBEDDED=y
++CONFIG_HAVE_PERF_EVENTS=y
++CONFIG_PERF_EVENTS=y
++CONFIG_VM_EVENT_COUNTERS=y
++CONFIG_SLUB_DEBUG=y
++CONFIG_SLUB=y
++CONFIG_32BIT=y
++CONFIG_RISCV=y
++CONFIG_ARCH_MMAP_RND_BITS_MIN=8
++CONFIG_ARCH_MMAP_RND_BITS_MAX=17
++CONFIG_RISCV_SBI=y
++CONFIG_MMU=y
++CONFIG_VA_BITS=32
++CONFIG_PA_BITS=34
++CONFIG_PAGE_OFFSET=0xC0000000
++CONFIG_ARCH_FLATMEM_ENABLE=y
++CONFIG_ARCH_SPARSEMEM_ENABLE=y
++CONFIG_ARCH_SELECT_MEMORY_MODEL=y
++CONFIG_ARCH_WANT_GENERAL_HUGETLB=y
++CONFIG_ARCH_SUPPORTS_UPROBES=y
++CONFIG_STACKTRACE_SUPPORT=y
++CONFIG_TRACE_IRQFLAGS_SUPPORT=y
++CONFIG_GENERIC_BUG=y
++CONFIG_GENERIC_CALIBRATE_DELAY=y
++CONFIG_GENERIC_CSUM=y
++CONFIG_GENERIC_HWEIGHT=y
++CONFIG_FIX_EARLYCON_MEM=y
++CONFIG_PGTABLE_LEVELS=2
++CONFIG_LOCKDEP_SUPPORT=y
++CONFIG_SOC_ANGELIC47_PASKI=y
++CONFIG_RISCV_ERRATA_ALTERNATIVE=y
++CONFIG_ARCH_RV32I=y
++CONFIG_CMODEL_MEDLOW=y
++CONFIG_MAXPHYSMEM_1GB=y
++CONFIG_TUNE_GENERIC=y
++CONFIG_RISCV_BASE_PMU=y
++CONFIG_HZ_250=y
++CONFIG_HZ=250
++CONFIG_RISCV_SBI_V01=y
++CONFIG_CMDLINE="earlycon=sbi console=hvc0 mem=16M@0x40000000 root=/dev/mmcblk0p3 rw rootfstype=ext4 rootwait swiotlb=32"
++CONFIG_CMDLINE_EXTEND=y
++CONFIG_PHYS_RAM_BASE_FIXED=y
++CONFIG_PHYS_RAM_BASE=0x40000000
++CONFIG_BUILTIN_DTB=y
++CONFIG_EARLY_PRINTK=y
++CONFIG_PASKI_S_BOOTHARTID=y
++CONFIG_PASKI_S_BOOTHARTID_VAL=0
++CONFIG_HAVE_KPROBES=y
++CONFIG_HAVE_KRETPROBES=y
++CONFIG_HAVE_KPROBES_ON_FTRACE=y
++CONFIG_HAVE_FUNCTION_ERROR_INJECTION=y
++CONFIG_HAVE_ARCH_TRACEHOOK=y
++CONFIG_HAVE_DMA_CONTIGUOUS=y
++CONFIG_GENERIC_SMP_IDLE_THREAD=y
++CONFIG_ARCH_HAS_FORTIFY_SOURCE=y
++CONFIG_ARCH_HAS_SET_MEMORY=y
++CONFIG_ARCH_HAS_SET_DIRECT_MAP=y
++CONFIG_HAVE_ASM_MODVERSIONS=y
++CONFIG_HAVE_REGS_AND_STACK_ACCESS_API=y
++CONFIG_HAVE_PERF_REGS=y
++CONFIG_HAVE_PERF_USER_STACK_DUMP=y
++CONFIG_HAVE_ARCH_JUMP_LABEL=y
++CONFIG_HAVE_ARCH_JUMP_LABEL_RELATIVE=y
++CONFIG_HAVE_ARCH_SECCOMP=y
++CONFIG_HAVE_ARCH_SECCOMP_FILTER=y
++CONFIG_HAVE_STACKPROTECTOR=y
++CONFIG_LTO_NONE=y
++CONFIG_HAVE_CONTEXT_TRACKING=y
++CONFIG_HAVE_IRQ_TIME_ACCOUNTING=y
++CONFIG_ARCH_HAS_ELF_RANDOMIZE=y
++CONFIG_HAVE_ARCH_MMAP_RND_BITS=y
++CONFIG_ARCH_MMAP_RND_BITS=8
++CONFIG_ARCH_WANT_DEFAULT_TOPDOWN_MMAP_LAYOUT=y
++CONFIG_CLONE_BACKWARDS=y
++CONFIG_ARCH_OPTIONAL_KERNEL_RWX=y
++CONFIG_ARCH_OPTIONAL_KERNEL_RWX_DEFAULT=y
++CONFIG_ARCH_HAS_STRICT_KERNEL_RWX=y
++CONFIG_ARCH_HAS_STRICT_MODULE_RWX=y
++CONFIG_ARCH_SUPPORTS_DEBUG_PAGEALLOC=y
++CONFIG_ARCH_HAS_GCOV_PROFILE_ALL=y
++CONFIG_HAVE_GCC_PLUGINS=y
++CONFIG_RT_MUTEXES=y
++CONFIG_BASE_SMALL=0
++CONFIG_MODULES_TREE_LOOKUP=y
++CONFIG_BLOCK=y
++CONFIG_PARTITION_ADVANCED=y
++CONFIG_MSDOS_PARTITION=y
++CONFIG_MQ_IOSCHED_DEADLINE=y
++CONFIG_MQ_IOSCHED_KYBER=y
++CONFIG_INLINE_SPIN_UNLOCK_IRQ=y
++CONFIG_INLINE_READ_UNLOCK=y
++CONFIG_INLINE_READ_UNLOCK_IRQ=y
++CONFIG_INLINE_WRITE_UNLOCK=y
++CONFIG_INLINE_WRITE_UNLOCK_IRQ=y
++CONFIG_ARCH_SUPPORTS_ATOMIC_RMW=y
++CONFIG_ARCH_HAS_MMIOWB=y
++CONFIG_BINFMT_ELF=y
++CONFIG_ELFCORE=y
++CONFIG_BINFMT_SCRIPT=y
++CONFIG_ARCH_HAS_BINFMT_FLAT=y
++CONFIG_BINFMT_MISC=y
++CONFIG_SELECT_MEMORY_MODEL=y
++CONFIG_FLATMEM_MANUAL=y
++CONFIG_FLATMEM=y
++CONFIG_FLAT_NODE_MEM_MAP=y
++CONFIG_SPLIT_PTLOCK_CPUS=4
++CONFIG_COMPACTION=y
++CONFIG_MIGRATION=y
++CONFIG_DEFAULT_MMAP_MIN_ADDR=4096
++CONFIG_NEED_PER_CPU_KM=y
++CONFIG_GENERIC_EARLY_IOREMAP=y
++CONFIG_ARCH_HAS_PTE_SPECIAL=y
++CONFIG_HAVE_PCI=y
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_ALLOW_DEV_COREDUMP=y
++CONFIG_DTC=y
++CONFIG_OF=y
++CONFIG_OF_FLATTREE=y
++CONFIG_OF_EARLY_FLATTREE=y
++CONFIG_OF_KOBJ=y
++CONFIG_OF_ADDRESS=y
++CONFIG_OF_IRQ=y
++CONFIG_OF_RESERVED_MEM=y
++CONFIG_BLK_DEV=y
++CONFIG_SCSI_MOD=y
++CONFIG_INPUT=y
++CONFIG_TTY=y
++CONFIG_VT=y
++CONFIG_CONSOLE_TRANSLATIONS=y
++CONFIG_VT_CONSOLE=y
++CONFIG_HW_CONSOLE=y
++CONFIG_VT_HW_CONSOLE_BINDING=y
++CONFIG_UNIX98_PTYS=y
++CONFIG_SERIAL_EARLYCON=y
++CONFIG_SERIAL_EARLYCON_RISCV_SBI=y
++CONFIG_SERIAL_CORE=y
++CONFIG_SERIAL_CORE_CONSOLE=y
++CONFIG_SERIAL_SPINALHDL_UART=y
++CONFIG_SERIAL_SPINALHDL_UART_CONSOLE=y
++CONFIG_SERIAL_SPINALHDL_UART_MAX_PORTS=1
++CONFIG_SERIAL_SPINALHDL_FIFO_SIZE=8
++CONFIG_HVC_DRIVER=y
++CONFIG_HVC_RISCV_SBI=y
++CONFIG_TTY_PRINTK=y
++CONFIG_TTY_PRINTK_LEVEL=6
++CONFIG_SPI=y
++CONFIG_SPI_MASTER=y
++CONFIG_SPI_SPINALHDL=y
++CONFIG_SPINALHDL_SPI_DEFAULT_DEPTH=32
++CONFIG_SPINALHDL_SPI_CS_NUM=1
++CONFIG_SSB_POSSIBLE=y
++CONFIG_BCMA_POSSIBLE=y
++CONFIG_MFD_CORE=y
++CONFIG_MFD_SUN6I_PRCM=y
++CONFIG_DUMMY_CONSOLE=y
++CONFIG_DUMMY_CONSOLE_COLUMNS=80
++CONFIG_DUMMY_CONSOLE_ROWS=25
++CONFIG_USB_OHCI_LITTLE_ENDIAN=y
++CONFIG_MMC=y
++CONFIG_MMC_BLOCK=y
++CONFIG_MMC_BLOCK_MINORS=8
++CONFIG_MMC_SPI=y
++CONFIG_EDAC_SUPPORT=y
++CONFIG_HAVE_CLK=y
++CONFIG_CLKDEV_LOOKUP=y
++CONFIG_HAVE_CLK_PREPARE=y
++CONFIG_COMMON_CLK=y
++CONFIG_TIMER_OF=y
++CONFIG_TIMER_PROBE=y
++CONFIG_RISCV_TIMER=y
++CONFIG_IOMMU_SUPPORT=y
++CONFIG_ROCKCHIP_GRF=y
++CONFIG_IRQCHIP=y
++CONFIG_RISCV_INTC=y
++CONFIG_GENERIC_PHY=y
++CONFIG_FS_IOMAP=y
++CONFIG_EXT2_FS=y
++CONFIG_EXT2_FS_XATTR=y
++CONFIG_EXT3_FS=y
++CONFIG_EXT4_FS=y
++CONFIG_JBD2=y
++CONFIG_FS_MBCACHE=y
++CONFIG_FS_POSIX_ACL=y
++CONFIG_EXPORTFS=y
++CONFIG_FILE_LOCKING=y
++CONFIG_PROC_FS=y
++CONFIG_PROC_SYSCTL=y
++CONFIG_PROC_PAGE_MONITOR=y
++CONFIG_KERNFS=y
++CONFIG_SYSFS=y
++CONFIG_TMPFS=y
++CONFIG_TMPFS_POSIX_ACL=y
++CONFIG_TMPFS_XATTR=y
++CONFIG_ARCH_SUPPORTS_HUGETLBFS=y
++CONFIG_MEMFD_CREATE=y
++CONFIG_ARCH_HAS_GIGANTIC_PAGE=y
++CONFIG_IO_WQ=y
++CONFIG_HAVE_HARDENED_USERCOPY_ALLOCATOR=y
++CONFIG_DEFAULT_SECURITY_DAC=y
++CONFIG_LSM="landlock,lockdown,yama,loadpin,safesetid,integrity,bpf"
++CONFIG_INIT_STACK_NONE=y
++CONFIG_CRYPTO=y
++CONFIG_CRYPTO_ALGAPI=y
++CONFIG_CRYPTO_ALGAPI2=y
++CONFIG_CRYPTO_HASH=y
++CONFIG_CRYPTO_HASH2=y
++CONFIG_CRYPTO_MANAGER_DISABLE_TESTS=y
++CONFIG_CRYPTO_CRC32C=y
++CONFIG_CRYPTO_LIB_POLY1305_RSIZE=1
++CONFIG_CRYPTO_HW=y
++CONFIG_BITREVERSE=y
++CONFIG_GENERIC_STRNCPY_FROM_USER=y
++CONFIG_GENERIC_STRNLEN_USER=y
++CONFIG_RATIONAL=y
++CONFIG_GENERIC_PCI_IOMAP=y
++CONFIG_CRC16=y
++CONFIG_CRC_ITU_T=y
++CONFIG_CRC32=y
++CONFIG_CRC32_SLICEBY8=y
++CONFIG_CRC7=y
++CONFIG_HAS_IOMEM=y
++CONFIG_HAS_IOPORT_MAP=y
++CONFIG_HAS_DMA=y
++CONFIG_DMA_DECLARE_COHERENT=y
++CONFIG_GENERIC_ATOMIC64=y
++CONFIG_LIBFDT=y
++CONFIG_ARCH_STACKWALK=y
++CONFIG_SBITMAP=y
++CONFIG_GENERIC_IOREMAP=y
++CONFIG_GENERIC_LIB_ASHLDI3=y
++CONFIG_GENERIC_LIB_ASHRDI3=y
++CONFIG_GENERIC_LIB_LSHRDI3=y
++CONFIG_GENERIC_LIB_UCMPDI2=y
++CONFIG_GENERIC_LIB_DEVMEM_IS_ALLOWED=y
++CONFIG_PRINTK_TIME=y
++CONFIG_CONSOLE_LOGLEVEL_DEFAULT=15
++CONFIG_CONSOLE_LOGLEVEL_QUIET=15
++CONFIG_MESSAGE_LOGLEVEL_DEFAULT=7
++CONFIG_DYNAMIC_DEBUG_CORE=y
++CONFIG_DEBUG_BUGVERBOSE=y
++CONFIG_FRAME_WARN=1024
++CONFIG_ARCH_WANT_FRAME_POINTERS=y
++CONFIG_FRAME_POINTER=y
++CONFIG_MAGIC_SYSRQ=y
++CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE=0x1
++CONFIG_MAGIC_SYSRQ_SERIAL=y
++CONFIG_MAGIC_SYSRQ_SERIAL_SEQUENCE=""
++CONFIG_HAVE_ARCH_KGDB=y
++CONFIG_HAVE_ARCH_KGDB_QXFER_PKT=y
++CONFIG_DEBUG_KERNEL=y
++CONFIG_DEBUG_MISC=y
++CONFIG_ARCH_HAS_DEBUG_WX=y
++CONFIG_GENERIC_PTDUMP=y
++CONFIG_HAVE_DEBUG_KMEMLEAK=y
++CONFIG_ARCH_HAS_DEBUG_VM_PGTABLE=y
++CONFIG_DEBUG_VM=y
++CONFIG_ARCH_HAS_DEBUG_VIRTUAL=y
++CONFIG_DEBUG_VIRTUAL=y
++CONFIG_DEBUG_MEMORY_INIT=y
++CONFIG_CC_HAS_WORKING_NOSANITIZE_ADDRESS=y
++CONFIG_PANIC_ON_OOPS_VALUE=0
++CONFIG_PANIC_TIMEOUT=0
++CONFIG_SCHED_DEBUG=y
++CONFIG_LOCK_DEBUGGING_SUPPORT=y
++CONFIG_HAVE_SYSCALL_TRACEPOINTS=y
++CONFIG_TRACING_SUPPORT=y
++CONFIG_ARCH_HAS_KCOV=y
++CONFIG_CC_HAS_SANCOV_TRACE_PC=y
++CONFIG_ARCH_USE_MEMTEST=y
+diff -ruN linux-5.13.2/arch/riscv/Kconfig linux-5.13.2-paski2/arch/riscv/Kconfig
+--- linux-5.13.2/arch/riscv/Kconfig	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/Kconfig	2021-08-13 10:31:07.854571832 +0800
+@@ -117,12 +117,12 @@
+ 
+ # set if we run in machine mode, cleared if we run in supervisor mode
+ config RISCV_M_MODE
+-	bool
++	bool "Run in machine mode"
+ 	default !MMU
+ 
+ # set if we are running in S-mode and can use SBI calls
+ config RISCV_SBI
+-	bool
++	bool "Using RISC-V SBI"
+ 	depends on !RISCV_M_MODE
+ 	default y
+ 
+@@ -148,7 +148,7 @@
+ 	default 56 if 64BIT
+ 
+ config PAGE_OFFSET
+-	hex
++	hex "Memory Page Offset"
+ 	default 0xC0000000 if 32BIT && MAXPHYSMEM_1GB
+ 	default 0x80000000 if 64BIT && !MMU
+ 	default 0xffffffff80000000 if 64BIT && MAXPHYSMEM_2GB
+@@ -225,7 +225,7 @@
+ 	select GENERIC_LIB_ASHRDI3
+ 	select GENERIC_LIB_LSHRDI3
+ 	select GENERIC_LIB_UCMPDI2
+-	select MMU
++	#select MMU
+ 
+ config ARCH_RV64I
+ 	bool "RV64I"
+@@ -545,7 +545,7 @@
+ endmenu
+ 
+ config BUILTIN_DTB
+-	bool
++	bool "Builtin DTB Support"
+ 	depends on OF
+ 	default y if XIP_KERNEL
+ 
+@@ -556,3 +556,43 @@
+ endmenu
+ 
+ source "drivers/firmware/Kconfig"
++
++menu "Angelic47 Paski SoC Options"
++
++config EARLY_PRINTK_PASKI_SOC
++	bool "Paski early printk support"
++	depends on SOC_ANGELIC47_PASKI
++	help
++	  This is the Paski SoC early printk support.
++
++config EARLY_PRINTK
++	bool "RISC-V Early printk support"
++	depends on SOC_ANGELIC47_PASKI
++	help
++	  default y if EARLY_PRINTK_PASKI_SOC
++
++config EARLY_PRINTK_PASKI_SOC_REGBASE
++	hex "Paski early printk SpinalUart base address"
++	depends on SOC_ANGELIC47_PASKI && EARLY_PRINTK_PASKI_SOC
++	help
++	  This defines where the SpinalUart regbase to use for early printk.
++
++config PASKI_S_BOOTHARTID
++	bool "Manually specific the boot hartid"
++	depends on SOC_ANGELIC47_PASKI && !RISCV_M_MODE
++	help
++	  Paski SoC used OpenSBI as first bootloader and u-boot and secondary
++	  bootloader. There is no way to support HARTID passed by register a0.
++	  To solve this problem, we added some options to hard-code the HARTID
++	  at the startup time. Here to selects if enable this function.
++
++config PASKI_S_BOOTHARTID_VAL
++	int "Hardcoded boot hartid at startup time"
++	depends on PASKI_S_BOOTHARTID
++	help
++	  Paski SoC used OpenSBI as first bootloader and u-boot and secondary
++	  bootloader. There is no way to support HARTID passed by register a0.
++	  To solve this problem, we added some options to hard-code the HARTID
++	  at the startup time. Here to specific which hartid will be used.
++
++endmenu
+diff -ruN linux-5.13.2/arch/riscv/Kconfig.socs linux-5.13.2-paski2/arch/riscv/Kconfig.socs
+--- linux-5.13.2/arch/riscv/Kconfig.socs	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/Kconfig.socs	2021-08-13 10:31:07.858571876 +0800
+@@ -70,4 +70,9 @@
+ 
+ endif
+ 
++config SOC_ANGELIC47_PASKI
++	bool "Angelic47 Paski SoCs"
++	help
++	  This enables support for Angelic47 Paski SoC platforms.
++
+ endmenu
+diff -ruN linux-5.13.2/arch/riscv/kernel/head.S linux-5.13.2-paski2/arch/riscv/kernel/head.S
+--- linux-5.13.2/arch/riscv/kernel/head.S	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/kernel/head.S	2021-08-13 10:31:08.046573961 +0800
+@@ -232,6 +232,14 @@
+ 	 * to hand it to us.
+ 	 */
+ 	csrr a0, CSR_MHARTID
++#else
++	#ifdef CONFIG_PASKI_S_BOOTHARTID
++	/*
++	 * The hartid in a0 is expected later on, and we have no firmware
++	 * to hand it to us too on paski vexriscv.
++	 */
++	li a0, CONFIG_PASKI_S_BOOTHARTID_VAL
++	#endif
+ #endif /* CONFIG_RISCV_M_MODE */
+ 
+ 	/* Load the global pointer */
+diff -ruN linux-5.13.2/arch/riscv/kernel/setup.c linux-5.13.2-paski2/arch/riscv/kernel/setup.c
+--- linux-5.13.2/arch/riscv/kernel/setup.c	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/kernel/setup.c	2021-08-13 10:31:08.090574449 +0800
+@@ -36,6 +36,50 @@
+ 
+ #include "head.h"
+ 
++#ifdef CONFIG_EARLY_PRINTK_PASKI_SOC
++typedef struct
++{
++  volatile uint32_t DATA;
++  volatile uint32_t STATUS;
++  volatile uint32_t CLOCK_DIVIDER;
++  volatile uint32_t FRAME_CONFIG;
++} SpinalHDL_Early_Uart_Reg;
++
++uint32_t spinaluart_early_write_availability(SpinalHDL_Early_Uart_Reg *reg){
++	return (reg->STATUS >> 16) & 0xFF;
++}
++
++static void spinaluart_early_putchar(const char ch)
++{
++	SpinalHDL_Early_Uart_Reg *reg = (SpinalHDL_Early_Uart_Reg *)(CONFIG_EARLY_PRINTK_PASKI_SOC_REGBASE);
++	
++	while(spinaluart_early_write_availability(reg) == 0)
++		cpu_relax();
++	
++	reg->DATA = ch;
++}
++
++static void paski_early_console_write(struct console *co, const char *buf,
++			      unsigned int n)
++{
++	int i;
++
++	for (i = 0; i < n; ++i) {
++		if (buf[i] == '\n')
++			spinaluart_early_putchar('\r');
++		spinaluart_early_putchar(buf[i]);
++	}
++}
++
++struct console riscv_paskisoc_early_console_dev __initdata = {
++	.name	= "early",
++	.write	= paski_early_console_write,
++	.flags	= CON_PRINTBUFFER | CON_BOOT | CON_ANYTIME,
++	.index	= -1
++};
++#endif
++
++
+ #if defined(CONFIG_DUMMY_CONSOLE) || defined(CONFIG_EFI)
+ struct screen_info screen_info __section(".data") = {
+ 	.orig_video_lines	= 30,
+@@ -263,6 +307,12 @@
+ 
+ void __init setup_arch(char **cmdline_p)
+ {
++#if defined(CONFIG_EARLY_PRINTK_PASKI_SOC)
++       if (likely(early_console == NULL)) {
++               early_console = &riscv_paskisoc_early_console_dev;
++               register_console(early_console);
++       }
++#endif
+ 	parse_dtb();
+ 	init_mm.start_code = (unsigned long) _stext;
+ 	init_mm.end_code   = (unsigned long) _etext;
+diff -ruN linux-5.13.2/arch/riscv/lib/memcpy.S linux-5.13.2-paski2/arch/riscv/lib/memcpy.S
+--- linux-5.13.2/arch/riscv/lib/memcpy.S	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/lib/memcpy.S	2021-08-13 10:31:08.202575691 +0800
+@@ -9,100 +9,151 @@
+ /* void *memcpy(void *, const void *, size_t) */
+ ENTRY(__memcpy)
+ WEAK(memcpy)
+-	move t6, a0  /* Preserve return value */
++	/* Save for return value */
++	mv	t6, a0
+ 
+-	/* Defer to byte-oriented copy for small sizes */
+-	sltiu a3, a2, 128
+-	bnez a3, 4f
+-	/* Use word-oriented copy only if low-order bits match */
+-	andi a3, t6, SZREG-1
+-	andi a4, a1, SZREG-1
+-	bne a3, a4, 4f
+-
+-	beqz a3, 2f  /* Skip if already aligned */
+-	/*
+-	 * Round to nearest double word-aligned address
+-	 * greater than or equal to start address
+-	 */
+-	andi a3, a1, ~(SZREG-1)
+-	addi a3, a3, SZREG
+-	/* Handle initial misalignment */
+-	sub a4, a3, a1
++	/*
++	 * Register allocation for code below:
++	 * a0 - start of uncopied dst
++	 * a1 - start of uncopied src
++	 * t0 - end of uncopied dst
++	 */
++	add	t0, a0, a2
++
++	/*
++	 * Use bytewise copy if too small.
++	 *
++	 * This threshold must be at least 2*SZREG to ensure at least one
++	 * wordwise copy is performed. It is chosen to be 16 because it will
++	 * save at least 7 iterations of bytewise copy, which pays off the
++	 * fixed overhead.
++	 */
++	li	a3, 16
++	bltu	a2, a3, .Lbyte_copy_tail
++
++	/*
++	 * Bytewise copy first to align a0 to word boundary.
++	 */
++	addi	a2, a0, SZREG-1
++	andi	a2, a2, ~(SZREG-1)
++	beq	a0, a2, 2f
+ 1:
+-	lb a5, 0(a1)
+-	addi a1, a1, 1
+-	sb a5, 0(t6)
+-	addi t6, t6, 1
+-	bltu a1, a3, 1b
+-	sub a2, a2, a4  /* Update count */
++	lb	a5, 0(a1)
++	addi	a1, a1, 1
++	sb	a5, 0(a0)
++	addi	a0, a0, 1
++	bne	a0, a2, 1b
++2:
+ 
++	/*
++	 * Now a0 is word-aligned. If a1 is also word aligned, we could perform
++	 * aligned word-wise copy. Otherwise we need to perform misaligned
++	 * word-wise copy.
++	 */
++	andi	a3, a1, SZREG-1
++	bnez	a3, .Lmisaligned_word_copy
++
++	/* Unrolled wordwise copy */
++	addi	t0, t0, -(16*SZREG-1)
++	bgeu	a0, t0, 2f
++1:
++	REG_L	a2,        0(a1)
++	REG_L	a3,    SZREG(a1)
++	REG_L	a4,  2*SZREG(a1)
++	REG_L	a5,  3*SZREG(a1)
++	REG_L	a6,  4*SZREG(a1)
++	REG_L	a7,  5*SZREG(a1)
++	REG_L	t1,  6*SZREG(a1)
++	REG_L	t2,  7*SZREG(a1)
++	REG_L	t3,  8*SZREG(a1)
++	REG_L	t4,  9*SZREG(a1)
++	REG_L	t5, 10*SZREG(a1)
++	REG_S	a2,        0(a0)
++	REG_S	a3,    SZREG(a0)
++	REG_S	a4,  2*SZREG(a0)
++	REG_S	a5,  3*SZREG(a0)
++	REG_S	a6,  4*SZREG(a0)
++	REG_S	a7,  5*SZREG(a0)
++	REG_S	t1,  6*SZREG(a0)
++	REG_S	t2,  7*SZREG(a0)
++	REG_S	t3,  8*SZREG(a0)
++	REG_S	t4,  9*SZREG(a0)
++	REG_S	t5, 10*SZREG(a0)
++	REG_L	a2, 11*SZREG(a1)
++	REG_L	a3, 12*SZREG(a1)
++	REG_L	a4, 13*SZREG(a1)
++	REG_L	a5, 14*SZREG(a1)
++	REG_L	a6, 15*SZREG(a1)
++	addi	a1, a1, 16*SZREG
++	REG_S	a2, 11*SZREG(a0)
++	REG_S	a3, 12*SZREG(a0)
++	REG_S	a4, 13*SZREG(a0)
++	REG_S	a5, 14*SZREG(a0)
++	REG_S	a6, 15*SZREG(a0)
++	addi	a0, a0, 16*SZREG
++	bltu	a0, t0, 1b
+ 2:
+-	andi a4, a2, ~((16*SZREG)-1)
+-	beqz a4, 4f
+-	add a3, a1, a4
+-3:
+-	REG_L a4,       0(a1)
+-	REG_L a5,   SZREG(a1)
+-	REG_L a6, 2*SZREG(a1)
+-	REG_L a7, 3*SZREG(a1)
+-	REG_L t0, 4*SZREG(a1)
+-	REG_L t1, 5*SZREG(a1)
+-	REG_L t2, 6*SZREG(a1)
+-	REG_L t3, 7*SZREG(a1)
+-	REG_L t4, 8*SZREG(a1)
+-	REG_L t5, 9*SZREG(a1)
+-	REG_S a4,       0(t6)
+-	REG_S a5,   SZREG(t6)
+-	REG_S a6, 2*SZREG(t6)
+-	REG_S a7, 3*SZREG(t6)
+-	REG_S t0, 4*SZREG(t6)
+-	REG_S t1, 5*SZREG(t6)
+-	REG_S t2, 6*SZREG(t6)
+-	REG_S t3, 7*SZREG(t6)
+-	REG_S t4, 8*SZREG(t6)
+-	REG_S t5, 9*SZREG(t6)
+-	REG_L a4, 10*SZREG(a1)
+-	REG_L a5, 11*SZREG(a1)
+-	REG_L a6, 12*SZREG(a1)
+-	REG_L a7, 13*SZREG(a1)
+-	REG_L t0, 14*SZREG(a1)
+-	REG_L t1, 15*SZREG(a1)
+-	addi a1, a1, 16*SZREG
+-	REG_S a4, 10*SZREG(t6)
+-	REG_S a5, 11*SZREG(t6)
+-	REG_S a6, 12*SZREG(t6)
+-	REG_S a7, 13*SZREG(t6)
+-	REG_S t0, 14*SZREG(t6)
+-	REG_S t1, 15*SZREG(t6)
+-	addi t6, t6, 16*SZREG
+-	bltu a1, a3, 3b
+-	andi a2, a2, (16*SZREG)-1  /* Update count */
+-
+-4:
+-	/* Handle trailing misalignment */
+-	beqz a2, 6f
+-	add a3, a1, a2
+-
+-	/* Use word-oriented copy if co-aligned to word boundary */
+-	or a5, a1, t6
+-	or a5, a5, a3
+-	andi a5, a5, 3
+-	bnez a5, 5f
+-7:
+-	lw a4, 0(a1)
+-	addi a1, a1, 4
+-	sw a4, 0(t6)
+-	addi t6, t6, 4
+-	bltu a1, a3, 7b
++	/* Post-loop increment by 16*SZREG-1 and pre-loop decrement by SZREG-1 */
++	addi	t0, t0, 15*SZREG
+ 
+-	ret
++	/* Wordwise copy */
++	bgeu	a0, t0, 2f
++1:
++	REG_L	a5, 0(a1)
++	addi	a1, a1, SZREG
++	REG_S	a5, 0(a0)
++	addi	a0, a0, SZREG
++	bltu	a0, t0, 1b
++2:
++	addi	t0, t0, SZREG-1
++
++.Lbyte_copy_tail:
++	/*
++	 * Bytewise copy anything left.
++	 */
++	beq	a0, t0, 2f
++1:
++	lb	a5, 0(a1)
++	addi	a1, a1, 1
++	sb	a5, 0(a0)
++	addi	a0, a0, 1
++	bne	a0, t0, 1b
++2:
+ 
+-5:
+-	lb a4, 0(a1)
+-	addi a1, a1, 1
+-	sb a4, 0(t6)
+-	addi t6, t6, 1
+-	bltu a1, a3, 5b
+-6:
++	mv	a0, t6
+ 	ret
++
++.Lmisaligned_word_copy:
++	/*
++	 * Misaligned word-wise copy.
++	 * For misaligned copy we still perform word-wise copy, but we need to
++	 * use the value fetched from the previous iteration and do some shifts.
++	 * This is safe because we wouldn't access more words than necessary.
++	 */
++
++	/* Calculate shifts */
++	slli	t3, a3, 3
++	sub	t4, x0, t3 /* negate is okay as shift will only look at LSBs */
++
++	/* Load the initial value and align a1 */
++	andi	a1, a1, ~(SZREG-1)
++	REG_L	a5, 0(a1)
++
++	addi	t0, t0, -(SZREG-1)
++	/* At least one iteration will be executed here, no check */
++1:
++	srl	a4, a5, t3
++	REG_L	a5, SZREG(a1)
++	addi	a1, a1, SZREG
++	sll	a2, a5, t4
++	or	a2, a2, a4
++	REG_S	a2, 0(a0)
++	addi	a0, a0, SZREG
++	bltu	a0, t0, 1b
++
++	/* Update pointers to correct value */
++	addi	t0, t0, SZREG-1
++	add	a1, a1, a3
++
++	j	.Lbyte_copy_tail
+ END(__memcpy)
+diff -ruN linux-5.13.2/arch/riscv/lib/memmove.S linux-5.13.2-paski2/arch/riscv/lib/memmove.S
+--- linux-5.13.2/arch/riscv/lib/memmove.S	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/arch/riscv/lib/memmove.S	2021-08-13 10:31:08.214575824 +0800
+@@ -5,60 +5,124 @@
+ 
+ ENTRY(__memmove)
+ WEAK(memmove)
+-        move    t0, a0
+-        move    t1, a1
++	/*
++	 * Here we determine if forward copy is possible. Forward copy is
++	 * preferred to backward copy as it is more cache friendly.
++	 *
++	 * If a0 >= a1, t0 gives their distance, if t0 >= a2 then we can
++	 *   copy forward.
++	 * If a0 < a1, we can always copy forward. This will make t0 negative,
++	 *   so a *unsigned* comparison will always have t0 >= a2.
++	 *
++	 * For forward copy we just delegate the task to memcpy.
++	 */
++	sub	t0, a0, a1
++	bltu	t0, a2, 1f
++	tail	__memcpy
++1:
++
++	/*
++	 * Register allocation for code below:
++	 * a0 - end of uncopied dst
++	 * a1 - end of uncopied src
++	 * t0 - start of uncopied dst
++	 */
++	mv	t0, a0
++	add	a0, a0, a2
++	add	a1, a1, a2
++
++	/*
++	 * Use bytewise copy if too small.
++	 *
++	 * This threshold must be at least 2*SZREG to ensure at least one
++	 * wordwise copy is performed. It is chosen to be 16 because it will
++	 * save at least 7 iterations of bytewise copy, which pays off the
++	 * fixed overhead.
++	 */
++	li	a3, 16
++	bltu	a2, a3, .Lbyte_copy_tail
++
++	/*
++	 * Bytewise copy first to align t0 to word boundary.
++	 */
++	andi	a2, a0, ~(SZREG-1)
++	beq	a0, a2, 2f
++1:
++	addi	a1, a1, -1
++	lb	a5, 0(a1)
++	addi	a0, a0, -1
++	sb	a5, 0(a0)
++	bne	a0, a2, 1b
++2:
++
++	/*
++	 * Now a0 is word-aligned. If a1 is also word aligned, we could perform
++	 * aligned word-wise copy. Otherwise we need to perform misaligned
++	 * word-wise copy.
++	 */
++	andi	a3, a1, SZREG-1
++	bnez	a3, .Lmisaligned_word_copy
++
++	/* Wordwise copy */
++	addi	t0, t0, SZREG-1
++	bleu	a0, t0, 2f
++1:
++	addi	a1, a1, -SZREG
++	REG_L	a5, 0(a1)
++	addi	a0, a0, -SZREG
++	REG_S	a5, 0(a0)
++	bgtu	a0, t0, 1b
++2:
++	addi	t0, t0, -(SZREG-1)
++
++.Lbyte_copy_tail:
++	/*
++	 * Bytewise copy anything left.
++	 */
++	beq	a0, t0, 2f
++1:
++	addi	a1, a1, -1
++	lb	a5, 0(a1)
++	addi	a0, a0, -1
++	sb	a5, 0(a0)
++	bne	a0, t0, 1b
++2:
++
++	mv	a0, t0
++	ret
++
++.Lmisaligned_word_copy:
++	/*
++	 * Misaligned word-wise copy.
++	 * For misaligned copy we still perform word-wise copy, but we need to
++	 * use the value fetched from the previous iteration and do some shifts.
++	 * This is safe because we wouldn't access more words than necessary.
++	 */
++
++	/* Calculate shifts */
++	slli	t3, a3, 3
++	sub	t4, x0, t3 /* negate is okay as shift will only look at LSBs */
++
++	/* Load the initial value and align a1 */
++	andi	a1, a1, ~(SZREG-1)
++	REG_L	a5, 0(a1)
++
++	addi	t0, t0, SZREG-1
++	/* At least one iteration will be executed here, no check */
++1:
++	sll	a4, a5, t4
++	addi	a1, a1, -SZREG
++	REG_L	a5, 0(a1)
++	srl	a2, a5, t3
++	or	a2, a2, a4
++	addi	a0, a0, -SZREG
++	REG_S	a2, 0(a0)
++	bgtu	a0, t0, 1b
++
++	/* Update pointers to correct value */
++	addi	t0, t0, -(SZREG-1)
++	add	a1, a1, a3
++
++	j	.Lbyte_copy_tail
+ 
+-        beq     a0, a1, exit_memcpy
+-        beqz    a2, exit_memcpy
+-        srli    t2, a2, 0x2
+-
+-        slt     t3, a0, a1
+-        beqz    t3, do_reverse
+-
+-        andi    a2, a2, 0x3
+-        li      t4, 1
+-        beqz    t2, byte_copy
+-
+-word_copy:
+-        lw      t3, 0(a1)
+-        addi    t2, t2, -1
+-        addi    a1, a1, 4
+-        sw      t3, 0(a0)
+-        addi    a0, a0, 4
+-        bnez    t2, word_copy
+-        beqz    a2, exit_memcpy
+-        j       byte_copy
+-
+-do_reverse:
+-        add     a0, a0, a2
+-        add     a1, a1, a2
+-        andi    a2, a2, 0x3
+-        li      t4, -1
+-        beqz    t2, reverse_byte_copy
+-
+-reverse_word_copy:
+-        addi    a1, a1, -4
+-        addi    t2, t2, -1
+-        lw      t3, 0(a1)
+-        addi    a0, a0, -4
+-        sw      t3, 0(a0)
+-        bnez    t2, reverse_word_copy
+-        beqz    a2, exit_memcpy
+-
+-reverse_byte_copy:
+-        addi    a0, a0, -1
+-        addi    a1, a1, -1
+-
+-byte_copy:
+-        lb      t3, 0(a1)
+-        addi    a2, a2, -1
+-        sb      t3, 0(a0)
+-        add     a1, a1, t4
+-        add     a0, a0, t4
+-        bnez    a2, byte_copy
+-
+-exit_memcpy:
+-        move a0, t0
+-        move a1, t1
+-        ret
+ END(__memmove)
+diff -ruN linux-5.13.2/drivers/clocksource/Kconfig linux-5.13.2-paski2/drivers/clocksource/Kconfig
+--- linux-5.13.2/drivers/clocksource/Kconfig	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/drivers/clocksource/Kconfig	2021-08-13 10:31:12.102618938 +0800
+@@ -617,6 +617,13 @@
+ 	  is accessed via both the SBI and the rdcycle instruction.  This is
+ 	  required for all RISC-V systems.
+ 
++config PASKI_TIMER
++	bool "Angelic47 Paski SoC timer support" if COMPILE_TEST
++	depends on GENERIC_SCHED_CLOCK && RISCV
++	help
++	  Select this to enable support for a Angelic47 Paski SoC timer
++	  driver.
++
+ config CLINT_TIMER
+ 	bool "CLINT Timer for the RISC-V platform" if COMPILE_TEST
+ 	depends on GENERIC_SCHED_CLOCK && RISCV
+diff -ruN linux-5.13.2/drivers/clocksource/Makefile linux-5.13.2-paski2/drivers/clocksource/Makefile
+--- linux-5.13.2/drivers/clocksource/Makefile	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/drivers/clocksource/Makefile	2021-08-13 10:31:12.106618983 +0800
+@@ -83,6 +83,7 @@
+ obj-$(CONFIG_X86_NUMACHIP)		+= numachip.o
+ obj-$(CONFIG_ATCPIT100_TIMER)		+= timer-atcpit100.o
+ obj-$(CONFIG_RISCV_TIMER)		+= timer-riscv.o
++obj-$(CONFIG_PASKI_TIMER)		+= timer-paski.o
+ obj-$(CONFIG_CLINT_TIMER)		+= timer-clint.o
+ obj-$(CONFIG_CSKY_MP_TIMER)		+= timer-mp-csky.o
+ obj-$(CONFIG_GX6605S_TIMER)		+= timer-gx6605s.o
+diff -ruN linux-5.13.2/drivers/clocksource/timer-paski.c linux-5.13.2-paski2/drivers/clocksource/timer-paski.c
+--- linux-5.13.2/drivers/clocksource/timer-paski.c	1970-01-01 08:00:00.000000000 +0800
++++ linux-5.13.2-paski2/drivers/clocksource/timer-paski.c	2021-08-13 10:31:12.174619737 +0800
+@@ -0,0 +1,224 @@
++// SPDX-License-Identifier: GPL-2.0
++//
++// Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++
++#include <linux/clocksource.h>
++#include <linux/clockchips.h>
++#include <linux/cpu.h>
++#include <linux/delay.h>
++#include <linux/irq.h>
++#include <linux/irqdomain.h>
++#include <linux/sched_clock.h>
++#include <linux/io-64-nonatomic-lo-hi.h>
++#include <linux/interrupt.h>
++#include <linux/of_irq.h>
++#include <asm/smp.h>
++#include <asm/timex.h>
++
++#define PASKI_TIMER_REG_WRITE4(x,y) *((volatile unsigned long *)(x)) = (y)
++#define PASKI_TIMER_REG_READ4(x) (*((volatile unsigned long *)(x)))
++
++#define PASKI_SOC_TIMER_PRESCALER_BASE 0xF0003000
++#define PASKI_SOC_TIMER_INTCTRL 0xF0003010
++#define PASKI_SOC_TIMER_A_BASE 0xF0003040
++#define PASKI_SOC_TIMER_B_BASE 0xF0003050
++#define PASKI_SOC_TIMER_C_BASE 0xF0003060
++#define PASKI_SOC_TIMER_D_BASE 0xF0003070
++
++#define PASKI_SOC_TIMER_REG_CTMASK(x) (x + 0x0)
++#define PASKI_SOC_TIMER_REG_LIMIT(x) (x + 0x4)
++#define PASKI_SOC_TIMER_REG_VALUE(x) (x + 0x8)
++
++#define PASKI_SOC_INTCTRL_REG_PENDINGS(x) (x + 0x0)
++#define PASKI_SOC_INTCTRL_REG_MASKS(x) (x + 0x4)
++
++static int riscv_clock_next_event(unsigned long delta,
++		struct clock_event_device *ce)
++{
++	
++	// clear timer A interrupt pending
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_INTCTRL_REG_PENDINGS(PASKI_SOC_TIMER_INTCTRL), 0x00000001);
++	// enable timer A interrupt
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_INTCTRL_REG_MASKS(PASKI_SOC_TIMER_INTCTRL), 0x00000001);
++	
++	// timer A limit sets to delta
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_LIMIT(PASKI_SOC_TIMER_A_BASE), delta);
++	// timer A reload
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_VALUE(PASKI_SOC_TIMER_A_BASE), 0x00000000);
++	
++	csr_set(CSR_IE, IE_TIE);
++	
++	return 0;
++}
++
++static unsigned int riscv_clock_event_irq;
++static DEFINE_PER_CPU(struct clock_event_device, riscv_clock_event) = {
++	.name			= "riscv_timer_paski_clockevent",
++	.features		= CLOCK_EVT_FEAT_ONESHOT,
++	.rating			= 100,
++	.set_next_event		= riscv_clock_next_event,
++};
++
++/*
++ * It is guaranteed that all the timers across all the harts are synchronized
++ * within one tick of each other, so while this could technically go
++ * backwards when hopping between CPUs, practically it won't happen.
++ */
++static unsigned long long riscv_clocksource_rdtime(struct clocksource *cs)
++{
++	return PASKI_TIMER_REG_READ4(PASKI_SOC_TIMER_REG_VALUE(PASKI_SOC_TIMER_B_BASE));
++}
++
++static u64 notrace riscv_sched_clock(void)
++{
++	return PASKI_TIMER_REG_READ4(PASKI_SOC_TIMER_REG_VALUE(PASKI_SOC_TIMER_B_BASE));
++}
++
++static struct clocksource riscv_clocksource = {
++	.name		= "riscv_clocksource",
++	.rating		= 300,
++	.mask		= CLOCKSOURCE_MASK(32),
++	.flags		= CLOCK_SOURCE_IS_CONTINUOUS,
++	.read		= riscv_clocksource_rdtime,
++};
++
++static int riscv_timer_paski_starting_cpu(unsigned int cpu)
++{
++	struct clock_event_device *ce = per_cpu_ptr(&riscv_clock_event, cpu);
++	
++	// timer A limit sets to max
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_LIMIT(PASKI_SOC_TIMER_A_BASE), 0xFFFFFFFF);
++	// timer A reload
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_VALUE(PASKI_SOC_TIMER_A_BASE), 0x00000000);
++	// timer A tick by sysclk to enable, clears by none
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_CTMASK(PASKI_SOC_TIMER_A_BASE), 0x00000001);
++	
++	// clear timer A interrupt pending
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_INTCTRL_REG_PENDINGS(PASKI_SOC_TIMER_INTCTRL), 0x00000001);
++	// enable timer A interrupt
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_INTCTRL_REG_MASKS(PASKI_SOC_TIMER_INTCTRL), 0x00000001);
++	
++	
++	// timer B limit sets to max
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_LIMIT(PASKI_SOC_TIMER_B_BASE), 0xFFFFFFFF);
++	// timer B reload
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_VALUE(PASKI_SOC_TIMER_B_BASE), 0x00000000);
++	// timer B tick by sysclk to enable, clears by overflow
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_CTMASK(PASKI_SOC_TIMER_B_BASE), 0x00010001);
++
++	ce->cpumask = cpumask_of(cpu);
++	ce->irq = riscv_clock_event_irq;
++	clockevents_config_and_register(ce, riscv_timebase, 100, 0xffffffff);
++
++	enable_percpu_irq(riscv_clock_event_irq,
++			  irq_get_trigger_type(riscv_clock_event_irq));
++	
++	return 0;
++}
++
++static int riscv_timer_paski_dying_cpu(unsigned int cpu)
++{
++	disable_percpu_irq(riscv_clock_event_irq);
++	
++	// clear timer A interrupt pending
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_INTCTRL_REG_PENDINGS(PASKI_SOC_TIMER_INTCTRL), 0x00000001);
++	// disable timer A interrupt
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_INTCTRL_REG_MASKS(PASKI_SOC_TIMER_INTCTRL), 0x00000000);
++	// timer A disable
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_CTMASK(PASKI_SOC_TIMER_A_BASE), 0x00000000);
++	// timer A limit sets to max
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_LIMIT(PASKI_SOC_TIMER_A_BASE), 0xFFFFFFFF);
++	// timer A reload
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_VALUE(PASKI_SOC_TIMER_A_BASE), 0x00000000);
++	
++	// timer B disable
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_CTMASK(PASKI_SOC_TIMER_B_BASE), 0x00000000);
++	// timer B limit sets to max
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_LIMIT(PASKI_SOC_TIMER_B_BASE), 0xFFFFFFFF);
++	// timer B reload
++	PASKI_TIMER_REG_WRITE4(PASKI_SOC_TIMER_REG_VALUE(PASKI_SOC_TIMER_B_BASE), 0x00000000);
++	
++	return 0;
++}
++
++/* called directly from the low-level interrupt handler */
++static irqreturn_t riscv_timer_paski_interrupt(int irq, void *dev_id)
++{
++	struct clock_event_device *evdev = this_cpu_ptr(&riscv_clock_event);
++
++	csr_clear(CSR_IE, IE_TIE);
++	evdev->event_handler(evdev);
++
++	return IRQ_HANDLED;
++}
++
++static int __init riscv_timer_paski_init_dt(struct device_node *n)
++{
++	int cpuid, hartid, error;
++	struct device_node *child;
++	struct irq_domain *domain;
++
++	hartid = riscv_of_processor_hartid(n);
++	if (hartid < 0) {
++		pr_warn("Not valid hartid for node [%pOF] error = [%d]\n",
++			n, hartid);
++		return hartid;
++	}
++
++	cpuid = riscv_hartid_to_cpuid(hartid);
++	if (cpuid < 0) {
++		pr_warn("Invalid cpuid for hartid [%d]\n", hartid);
++		return cpuid;
++	}
++
++	if (cpuid != smp_processor_id())
++		return 0;
++
++	domain = NULL;
++	child = of_get_compatible_child(n, "riscv,cpu-intc");
++	if (!child) {
++		pr_err("Failed to find INTC node [%pOF]\n", n);
++		return -ENODEV;
++	}
++	domain = irq_find_host(child);
++	of_node_put(child);
++	if (!domain) {
++		pr_err("Failed to find IRQ domain for node [%pOF]\n", n);
++		return -ENODEV;
++	}
++
++	riscv_clock_event_irq = irq_create_mapping(domain, RV_IRQ_TIMER);
++	if (!riscv_clock_event_irq) {
++		pr_err("Failed to map timer interrupt for node [%pOF]\n", n);
++		return -ENODEV;
++	}
++
++	pr_info("%s: Registering clocksource cpuid [%d] hartid [%d]\n",
++	       __func__, cpuid, hartid);
++	error = clocksource_register_hz(&riscv_clocksource, riscv_timebase);
++	if (error) {
++		pr_err("RISCV timer register failed [%d] for cpu = [%d]\n",
++		       error, cpuid);
++		return error;
++	}
++
++	sched_clock_register(riscv_sched_clock, 32, riscv_timebase);
++
++	error = request_percpu_irq(riscv_clock_event_irq,
++				    riscv_timer_paski_interrupt,
++				    "riscv-timer", &riscv_clock_event);
++	if (error) {
++		pr_err("registering percpu irq failed [%d]\n", error);
++		return error;
++	}
++
++	error = cpuhp_setup_state(CPUHP_AP_RISCV_TIMER_STARTING,
++			 "clockevents/riscv/timer:starting",
++			 riscv_timer_paski_starting_cpu, riscv_timer_paski_dying_cpu);
++	if (error)
++		pr_err("cpu hp setup state failed for RISCV timer [%d]\n",
++		       error);
++	return error;
++}
++
++TIMER_OF_DECLARE(riscv_timer_paski, "riscv", riscv_timer_paski_init_dt);
+diff -ruN linux-5.13.2/drivers/spi/Kconfig linux-5.13.2-paski2/drivers/spi/Kconfig
+--- linux-5.13.2/drivers/spi/Kconfig	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/drivers/spi/Kconfig	2021-08-13 10:31:30.562823645 +0800
+@@ -769,6 +769,24 @@
+ 	help
+ 	  This exposes the SPI controller IP from SiFive.
+ 
++config SPI_SPINALHDL
++	tristate "SpinalHDL SPI IP Core controller"
++	depends on HAS_IOMEM
++	help
++	  This exposes the SPI controller IP from SpinalHDL.
++
++config SPINALHDL_SPI_DEFAULT_DEPTH
++	int "SpinalHDL SPICtrl IP fifo depth"
++	depends on SPI_SPINALHDL
++	help
++	  This sets the SpinalHDL SPI IP Core fifo size.
++
++config SPINALHDL_SPI_CS_NUM
++	int "SpinalHDL SPICtrl IP CS number"
++	depends on SPI_SPINALHDL
++	help
++	  This sets the SpinalHDL SPI IP CS line number.
++
+ config SPI_SLAVE_MT27XX
+ 	tristate "MediaTek SPI slave device"
+ 	depends on ARCH_MEDIATEK || COMPILE_TEST
+diff -ruN linux-5.13.2/drivers/spi/Makefile linux-5.13.2-paski2/drivers/spi/Makefile
+--- linux-5.13.2/drivers/spi/Makefile	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/drivers/spi/Makefile	2021-08-13 10:31:30.562823645 +0800
+@@ -108,6 +108,7 @@
+ obj-$(CONFIG_SPI_SH_MSIOF)		+= spi-sh-msiof.o
+ obj-$(CONFIG_SPI_SH_SCI)		+= spi-sh-sci.o
+ obj-$(CONFIG_SPI_SIFIVE)		+= spi-sifive.o
++obj-$(CONFIG_SPI_SPINALHDL)		+= spi-spinalhdl.o
+ obj-$(CONFIG_SPI_SLAVE_MT27XX)          += spi-slave-mt27xx.o
+ obj-$(CONFIG_SPI_SPRD)			+= spi-sprd.o
+ obj-$(CONFIG_SPI_SPRD_ADI)		+= spi-sprd-adi.o
+diff -ruN linux-5.13.2/drivers/spi/spi-spinalhdl.c linux-5.13.2-paski2/drivers/spi/spi-spinalhdl.c
+--- linux-5.13.2/drivers/spi/spi-spinalhdl.c	1970-01-01 08:00:00.000000000 +0800
++++ linux-5.13.2-paski2/drivers/spi/spi-spinalhdl.c	2021-08-13 10:31:30.694825109 +0800
+@@ -0,0 +1,311 @@
++// SPDX-License-Identifier: GPL-2.0
++//
++// Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++
++#include <linux/clk.h>
++#include <linux/module.h>
++#include <linux/interrupt.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/spi/spi.h>
++#include <linux/io.h>
++#include <linux/log2.h>
++
++#define SPINALHDL_SPI_DRIVER_NAME           "spinalhdl_spi"
++
++#define SPI_BASE reg_addr
++#define SPI_REG_WRITE4(x,y) *((volatile unsigned long *)(x)) = (y)
++#define SPI_REG_READ4(x) (*((volatile unsigned long *)(x)))
++
++#define SPI_REG_DATA 0x00
++#define SPI_REG_STATUS 0x04
++#define SPI_REG_CONFIG 0x08
++#define SPI_REG_CLKDIVIDER 0x0C
++#define SPI_REG_SS_SETUP 0x10
++#define SPI_REG_SS_HOLD 0x14
++#define SPI_REG_SS_DISABLE 0x18
++
++#define SPI_DATA (SPI_BASE + 0x00)
++#define SPI_STATUS (SPI_BASE + 0x04)
++#define SPI_CONFIG (SPI_BASE + 0x08)
++#define SPI_CLKDIVIDER (SPI_BASE + 0x0C)
++#define SPI_SS_SETUP (SPI_BASE + 0x10)
++#define SPI_SS_HOLD (SPI_BASE + 0x14)
++#define SPI_SS_DISABLE (SPI_BASE + 0x18)
++
++#define SPI_CLK_HZ (50000000 / 2) //todo: change to dts
++#define SPI_FIFO_SIZE 32 //todo: change to dts
++
++static unsigned int spinalhdl_spi_get_tx_fifo_left(unsigned long reg_addr)
++{
++	volatile unsigned long status = SPI_REG_READ4(SPI_STATUS);
++	return (status >> 16) & 0xffff;
++}
++
++static unsigned char spinalhdl_spi_read_fifo_blocked(unsigned long reg_addr)
++{
++	volatile unsigned long result = SPI_REG_READ4(SPI_DATA);
++	volatile unsigned long ready = result & 0x80000000;
++	while(!ready)
++	{
++		result = SPI_REG_READ4(SPI_DATA);
++		ready = result & 0x80000000;
++	}
++	return result & 0xff;
++}
++
++static void spinalhdl_spi_wait_fifo(unsigned long reg_addr)
++{
++	while(spinalhdl_spi_get_tx_fifo_left(reg_addr) == 0);
++}
++
++static void spinalhdl_spi_wait_fifo_empty(unsigned long reg_addr)
++{
++	while(spinalhdl_spi_get_tx_fifo_left(reg_addr) != 0x20);
++}
++
++static void spinalhdl_spi_send_cmd(unsigned long reg_addr, unsigned long cmd)
++{
++	spinalhdl_spi_wait_fifo(reg_addr);
++	SPI_REG_WRITE4(SPI_DATA, cmd);
++}
++
++static void spinalhdl_spi_enable_ss(unsigned long reg_addr, unsigned long ss)
++{
++	spinalhdl_spi_send_cmd(reg_addr, 0x11000000 | ss);
++}
++
++static void spinalhdl_spi_disable_ss(unsigned long reg_addr, unsigned long ss)
++{
++	spinalhdl_spi_send_cmd(reg_addr, 0x10000000 | ss);
++}
++
++static void spinalhdl_spi_send_data(unsigned long reg_addr, unsigned char data)
++{
++	spinalhdl_spi_send_cmd(reg_addr, 0x00000000 | data);
++}
++
++static void spinalhdl_spi_push_read_fifo(unsigned long reg_addr, unsigned char sendch)
++{
++	spinalhdl_spi_send_cmd(reg_addr, 0x01000000 | sendch);
++}
++
++static void spinalhdl_spi_set_config(unsigned long reg_addr, unsigned long config)
++{
++	SPI_REG_WRITE4(SPI_CONFIG, config);
++}
++
++static void spinalhdl_spi_set_clkdiv(unsigned long reg_addr, unsigned long clkdiv)
++{
++	SPI_REG_WRITE4(SPI_CLKDIVIDER, clkdiv);
++}
++
++static void spinalhdl_spi_set_ss_setup(unsigned long reg_addr, unsigned long setup)
++{
++	SPI_REG_WRITE4(SPI_SS_SETUP, setup);
++}
++
++static void spinalhdl_spi_set_ss_hold(unsigned long reg_addr, unsigned long hold)
++{
++	SPI_REG_WRITE4(SPI_SS_HOLD, hold);
++}
++
++static void spinalhdl_spi_set_ss_disable(unsigned long reg_addr, unsigned long disable)
++{
++	SPI_REG_WRITE4(SPI_SS_DISABLE, disable);
++}
++
++struct spinalhdl_spi {
++	void __iomem      *regs;        /* virt. address of control registers */
++	unsigned int      fifo_depth;   /* fifo depth in words */
++};
++
++static void spinalhdl_spi_init(struct spinalhdl_spi *spi)
++{
++	// no need to do anythings
++}
++
++static int
++spinalhdl_spi_prepare_message(struct spi_master *master, struct spi_message *msg)
++{
++	struct spinalhdl_spi *spi = spi_master_get_devdata(master);
++	struct spi_device *device = msg->spi;
++
++	unsigned long config_data = 0;
++	if (device->mode & SPI_CPOL)
++		config_data |= 0x1;
++
++	if (device->mode & SPI_CPHA)
++		config_data |= 0x2;
++	
++	if (device->mode & SPI_CS_HIGH)
++		config_data |= BIT(device->chip_select) << 4;
++	
++	spinalhdl_spi_set_config(spi->regs, config_data);
++
++	return 0;
++}
++
++static void spinalhdl_spi_set_cs(struct spi_device *device, bool is_high)
++{
++	struct spinalhdl_spi *spi = spi_master_get_devdata(device->master);
++
++	/* Reverse polarity is handled by SCMR/CPOL. Not inverted CS. */
++	if (device->mode & SPI_CS_HIGH)
++		is_high = !is_high;
++
++	if(is_high)
++		spinalhdl_spi_disable_ss(spi->regs, BIT(device->chip_select));
++	else
++		spinalhdl_spi_enable_ss(spi->regs, BIT(device->chip_select));
++}
++
++static int
++spinalhdl_spi_transfer_one(struct spi_master *master, struct spi_device *device,
++			struct spi_transfer *t)
++{
++	struct spinalhdl_spi *spi = spi_master_get_devdata(master);
++	const u8 *tx_buf = t->tx_buf;
++	u8 *rx_buf = t->rx_buf;
++	unsigned int remaining_words = t->len;
++
++	while (remaining_words) {
++		unsigned int n_words = min(remaining_words, spi->fifo_depth);
++		unsigned int i;
++		char data = 0xff;
++
++		for(i = 0; i < n_words; i ++)
++		{
++			if(tx_buf)
++			{
++				data = *tx_buf;
++				tx_buf ++;
++			}
++			if(rx_buf)
++				spinalhdl_spi_push_read_fifo(spi->regs, data);
++			else
++				spinalhdl_spi_send_data(spi->regs, data);
++		}
++		if(rx_buf)
++		{
++			for(i = 0; i < n_words; i ++)
++			{
++				*rx_buf = spinalhdl_spi_read_fifo_blocked(spi->regs);
++				rx_buf ++;
++			}
++		}
++
++		remaining_words -= n_words;
++	}
++
++	return 0;
++}
++
++static int spinalhdl_spi_probe(struct platform_device *pdev)
++{
++	struct spinalhdl_spi *spi;
++	int ret, irq, num_cs;
++	u32 cs_bits, max_bits_per_word;
++	struct spi_master *master;
++
++	master = spi_alloc_master(&pdev->dev, sizeof(struct spinalhdl_spi));
++	if (!master) {
++		dev_err(&pdev->dev, "out of memory\n");
++		return -ENOMEM;
++	}
++
++	spi = spi_master_get_devdata(master);
++	platform_set_drvdata(pdev, master);
++
++	spi->regs = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(spi->regs)) {
++		ret = PTR_ERR(spi->regs);
++		goto put_master;
++	}
++
++	/* Optional parameters */
++	ret =
++	  of_property_read_u32(pdev->dev.of_node, "spinalhdl,fifo-depth",
++			       &spi->fifo_depth);
++	if (ret < 0)
++		spi->fifo_depth = CONFIG_SPINALHDL_SPI_DEFAULT_DEPTH;
++
++	ret =
++	  of_property_read_u32(pdev->dev.of_node, "spinalhdl,max-bits-per-word",
++			       &max_bits_per_word);
++	
++	if (ret < 0)
++		ret = 8;
++
++	if (!ret && max_bits_per_word < 8) {
++		dev_err(&pdev->dev, "Only 8bit SPI words supported by the driver\n");
++		ret = -EINVAL;
++		goto put_master;
++	}
++
++	/* Define our master */
++	master->dev.of_node = pdev->dev.of_node;
++	master->bus_num = pdev->id;
++	master->num_chipselect = CONFIG_SPINALHDL_SPI_CS_NUM;
++	master->mode_bits = SPI_CPHA | SPI_CPOL
++			  | SPI_CS_HIGH | SPI_LSB_FIRST
++			  | SPI_TX_DUAL | SPI_TX_QUAD
++			  | SPI_RX_DUAL | SPI_RX_QUAD;
++	/* TODO: add driver support for bits_per_word < 8
++	 * we need to "left-align" the bits (unless SPI_LSB_FIRST)
++	 */
++	master->bits_per_word_mask = SPI_BPW_MASK(8);
++	master->flags = SPI_CONTROLLER_MUST_TX | SPI_MASTER_GPIO_SS;
++	master->prepare_message = spinalhdl_spi_prepare_message;
++	master->set_cs = spinalhdl_spi_set_cs;
++	master->transfer_one = spinalhdl_spi_transfer_one;
++
++	pdev->dev.dma_mask = NULL;
++	/* Configure the SPI master hardware */
++	spinalhdl_spi_init(spi);
++
++	dev_info(&pdev->dev, "mapped; cs=%d\n", master->num_chipselect);
++
++	ret = devm_spi_register_master(&pdev->dev, master);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "spi_register_master failed\n");
++		goto disable_clk;
++	}
++
++	return 0;
++
++disable_clk:
++	// nothing here
++put_master:
++	spi_master_put(master);
++
++	return ret;
++}
++
++static int spinalhdl_spi_remove(struct platform_device *pdev)
++{
++	struct spi_master *master = platform_get_drvdata(pdev);
++	struct spinalhdl_spi *spi = spi_master_get_devdata(master);
++
++	return 0;
++}
++
++static const struct of_device_id spinalhdl_spi_of_match[] = {
++	{ .compatible = "spinalhdl,spinalhdl-spi", },
++	{}
++};
++MODULE_DEVICE_TABLE(of, spinalhdl_spi_of_match);
++
++static struct platform_driver spinalhdl_spi_driver = {
++	.probe = spinalhdl_spi_probe,
++	.remove = spinalhdl_spi_remove,
++	.driver = {
++		.name = SPINALHDL_SPI_DRIVER_NAME,
++		.of_match_table = spinalhdl_spi_of_match,
++	},
++};
++module_platform_driver(spinalhdl_spi_driver);
++
++MODULE_AUTHOR("Angelic47 <admin@angelic47.com>");
++MODULE_DESCRIPTION("SpinalHDL SPICtrl IP Core Driver");
++MODULE_LICENSE("GPLv2");
+diff -ruN linux-5.13.2/drivers/tty/serial/Kconfig linux-5.13.2-paski2/drivers/tty/serial/Kconfig
+--- linux-5.13.2/drivers/tty/serial/Kconfig	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/drivers/tty/serial/Kconfig	2021-08-13 10:31:33.090851678 +0800
+@@ -1242,6 +1242,36 @@
+ 	help
+ 	  Enable a Cadence UART port to be the system console.
+ 
++config SERIAL_SPINALHDL_UART
++	tristate "SpinalHDL (VexRiscv) UART support"
++	depends on OF
++	select SERIAL_CORE
++	help
++	  This driver supports the SpinalHDL UARTCtrl IP Cores. 
++
++config SERIAL_SPINALHDL_UART_CONSOLE
++	bool "SpinalHDL UART console support"
++	depends on SERIAL_SPINALHDL_UART=y
++	select SERIAL_CORE_CONSOLE
++	select SERIAL_EARLYCON
++	help
++	  Enable a SpinalHDL UART port to be the system console.
++
++config SERIAL_SPINALHDL_UART_MAX_PORTS
++	int "Maximum number of SpinalHDL UART ports"
++	depends on SERIAL_SPINALHDL_UART=y
++	default "1"
++	help
++	  Set this to the maximum number of serial ports you want the driver
++	  to support.
++
++config SERIAL_SPINALHDL_FIFO_SIZE
++	int "Fifo size of SpinalHDL UART IP Core"
++	depends on SERIAL_SPINALHDL_UART=y
++	default "32"
++	help
++	  Set this to the fifo size of SpinalHDL serial ports.
++
+ config SERIAL_AR933X
+ 	tristate "AR933X serial port support"
+ 	depends on HAVE_CLK && ATH79
+diff -ruN linux-5.13.2/drivers/tty/serial/Makefile linux-5.13.2-paski2/drivers/tty/serial/Makefile
+--- linux-5.13.2/drivers/tty/serial/Makefile	2021-07-14 23:07:52.000000000 +0800
++++ linux-5.13.2-paski2/drivers/tty/serial/Makefile	2021-08-13 10:31:33.094851722 +0800
+@@ -68,6 +68,7 @@
+ obj-$(CONFIG_SERIAL_MXS_AUART) += mxs-auart.o
+ obj-$(CONFIG_SERIAL_LANTIQ)	+= lantiq.o
+ obj-$(CONFIG_SERIAL_XILINX_PS_UART) += xilinx_uartps.o
++obj-$(CONFIG_SERIAL_SPINALHDL_UART) += spinalhdl_uart.o
+ obj-$(CONFIG_SERIAL_TEGRA) += serial-tegra.o
+ obj-$(CONFIG_SERIAL_TEGRA_TCU) += tegra-tcu.o
+ obj-$(CONFIG_SERIAL_AR933X)   += ar933x_uart.o
+diff -ruN linux-5.13.2/drivers/tty/serial/spinalhdl_uart.c linux-5.13.2-paski2/drivers/tty/serial/spinalhdl_uart.c
+--- linux-5.13.2/drivers/tty/serial/spinalhdl_uart.c	1970-01-01 08:00:00.000000000 +0800
++++ linux-5.13.2-paski2/drivers/tty/serial/spinalhdl_uart.c	2021-08-13 10:31:33.178852654 +0800
+@@ -0,0 +1,395 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * SpinalHDL UartCtrl IP Core Driver
++ *
++ * Copyright (C) 2021 Angelic47 <admin@angelic47.com>
++ */
++
++#include <linux/console.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_platform.h>
++#include <linux/serial.h>
++#include <linux/serial_core.h>
++#include <linux/slab.h>
++#include <linux/timer.h>
++#include <linux/tty_flip.h>
++#include <linux/xarray.h>
++
++struct spinaluart_port {
++	struct uart_port port;
++	struct timer_list timer;
++	u32 id;
++};
++
++typedef struct
++{
++  volatile uint32_t DATA;
++  volatile uint32_t STATUS;
++  volatile uint32_t CLOCK_DIVIDER;
++  volatile uint32_t FRAME_CONFIG;
++} SpinalHDL_Uart_Reg;
++
++enum SpinalHDL_UartDataLength {BITS_8 = 8};
++enum SpinalHDL_UartParity {NONE = 0,EVEN = 1,ODD = 2};
++enum SpinalHDL_UartStop {ONE = 0,TWO = 1};
++
++#define to_spinaluart_port(port)	container_of(port, struct spinaluart_port, port)
++
++static DEFINE_XARRAY_FLAGS(spinaluart_array, XA_FLAGS_ALLOC);
++
++#ifdef CONFIG_SERIAL_SPINALHDL_UART_CONSOLE
++static struct console spinaluart_console;
++#endif
++
++static struct uart_driver spinaluart_driver = {
++	.owner = THIS_MODULE,
++	.driver_name = "spinaluart",
++	.dev_name = "ttySPL",
++	.major = 0,
++	.minor = 0,
++	.nr = CONFIG_SERIAL_SPINALHDL_UART_MAX_PORTS,
++#ifdef CONFIG_SERIAL_SPINALHDL_UART_CONSOLE
++	.cons = &spinaluart_console,
++#endif
++};
++
++uint32_t spinaluart_uart_read_occupancy(SpinalHDL_Uart_Reg *reg){
++	return reg->STATUS >> 24;
++}
++
++uint32_t spinaluart_write_availability(SpinalHDL_Uart_Reg *reg){
++	return (reg->STATUS >> 16) & 0xFF;
++}
++
++static void spinaluart_putchar(struct uart_port *port, int ch)
++{
++	SpinalHDL_Uart_Reg *reg = (SpinalHDL_Uart_Reg *)(port->membase);
++	
++	while(spinaluart_write_availability(reg) == 0)
++		cpu_relax();
++	
++	reg->DATA = ch & 0xff;
++}
++
++static void spinaluart_timer(struct timer_list *t)
++{
++	struct spinaluart_port *uart = from_timer(uart, t, timer);
++	struct uart_port *port = &uart->port;
++	SpinalHDL_Uart_Reg *reg = (SpinalHDL_Uart_Reg *)(port->membase);
++	unsigned int flg = TTY_NORMAL;
++	int ch;
++
++	while (spinaluart_uart_read_occupancy(reg) != 0) {
++		ch = reg->DATA & 0xff;
++		port->icount.rx++;
++		
++		if (!(uart_handle_sysrq_char(port, ch)))
++			uart_insert_char(port, 1, 0, ch, flg);
++
++		tty_flip_buffer_push(&port->state->port);
++	}
++
++	mod_timer(&uart->timer, jiffies + uart_poll_timeout(port));
++}
++
++static unsigned int spinaluart_tx_empty(struct uart_port *port)
++{
++	SpinalHDL_Uart_Reg *reg = (SpinalHDL_Uart_Reg *)(port->membase);
++	
++	/* not really tx empty, just checking if tx is not full */
++	if (!(spinaluart_write_availability(reg) == 0))
++		return TIOCSER_TEMT;
++
++	return 0;
++}
++
++static void spinaluart_set_mctrl(struct uart_port *port, unsigned int mctrl)
++{
++	/* modem control register is not present in LiteUART */
++}
++
++static unsigned int spinaluart_get_mctrl(struct uart_port *port)
++{
++	return TIOCM_CTS | TIOCM_DSR | TIOCM_CAR;
++}
++
++static void spinaluart_stop_tx(struct uart_port *port)
++{
++}
++
++static void spinaluart_start_tx(struct uart_port *port)
++{
++	struct circ_buf *xmit = &port->state->xmit;
++	unsigned char ch;
++
++	if (unlikely(port->x_char)) {
++		spinaluart_putchar(port, port->x_char);
++		port->icount.tx++;
++		port->x_char = 0;
++	} else if (!uart_circ_empty(xmit)) {
++		while (xmit->head != xmit->tail) {
++			ch = xmit->buf[xmit->tail];
++			xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
++			port->icount.tx++;
++			spinaluart_putchar(port, ch);
++		}
++	}
++
++	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
++		uart_write_wakeup(port);
++}
++
++static void spinaluart_stop_rx(struct uart_port *port)
++{
++	struct spinaluart_port *uart = to_spinaluart_port(port);
++
++	/* just delete timer */
++	del_timer(&uart->timer);
++}
++
++static void spinaluart_break_ctl(struct uart_port *port, int break_state)
++{
++	/* SpinalHDL UartCtrl IP Core doesn't support sending break signal */
++}
++
++static int spinaluart_startup(struct uart_port *port)
++{
++	struct spinaluart_port *uart = to_spinaluart_port(port);
++
++	/* prepare timer for polling */
++	timer_setup(&uart->timer, spinaluart_timer, 0);
++	mod_timer(&uart->timer, jiffies + uart_poll_timeout(port));
++
++	return 0;
++}
++
++static void spinaluart_shutdown(struct uart_port *port)
++{
++}
++
++static void spinaluart_set_termios(struct uart_port *port, struct ktermios *new,
++				 struct ktermios *old)
++{
++	unsigned int baud;
++	unsigned long flags;
++
++	spin_lock_irqsave(&port->lock, flags);
++
++	/* update baudrate */
++	baud = uart_get_baud_rate(port, new, old, 0, 460800);
++	uart_update_timeout(port, new->c_cflag, baud);
++
++	spin_unlock_irqrestore(&port->lock, flags);
++}
++
++static const char *spinaluart_type(struct uart_port *port)
++{
++	return "spinaluart";
++}
++
++static void spinaluart_release_port(struct uart_port *port)
++{
++	// nothing to do here
++}
++
++static int spinaluart_request_port(struct uart_port *port)
++{
++	return 0;
++}
++
++static void spinaluart_config_port(struct uart_port *port, int flags)
++{
++	/*
++	 * Driver core for serial ports forces a non-zero value for port type.
++	 * Write an arbitrary value here to accommodate the serial core driver,
++	 * as ID part of UAPI is redundant.
++	 */
++	port->type = 1;
++}
++
++static int spinaluart_verify_port(struct uart_port *port,
++				struct serial_struct *ser)
++{
++	if (port->type != PORT_UNKNOWN && ser->type != 1)
++		return -EINVAL;
++
++	return 0;
++}
++
++static const struct uart_ops spinaluart_ops = {
++	.tx_empty	= spinaluart_tx_empty,
++	.set_mctrl	= spinaluart_set_mctrl,
++	.get_mctrl	= spinaluart_get_mctrl,
++	.stop_tx	= spinaluart_stop_tx,
++	.start_tx	= spinaluart_start_tx,
++	.stop_rx	= spinaluart_stop_rx,
++	.break_ctl	= spinaluart_break_ctl,
++	.startup	= spinaluart_startup,
++	.shutdown	= spinaluart_shutdown,
++	.set_termios	= spinaluart_set_termios,
++	.type		= spinaluart_type,
++	.release_port	= spinaluart_release_port,
++	.request_port	= spinaluart_request_port,
++	.config_port	= spinaluart_config_port,
++	.verify_port	= spinaluart_verify_port,
++};
++
++static int spinaluart_probe(struct platform_device *pdev)
++{
++	struct spinaluart_port *uart;
++	struct uart_port *port;
++	struct xa_limit limit;
++	int dev_id, ret;
++
++	/* look for aliases; auto-enumerate for free index if not found */
++	dev_id = of_alias_get_id(pdev->dev.of_node, "serial");
++	if (dev_id < 0)
++		limit = XA_LIMIT(0, CONFIG_SERIAL_SPINALHDL_UART_MAX_PORTS);
++	else
++		limit = XA_LIMIT(dev_id, dev_id);
++
++	uart = devm_kzalloc(&pdev->dev, sizeof(struct spinaluart_port), GFP_KERNEL);
++	if (!uart)
++		return -ENOMEM;
++
++	ret = xa_alloc(&spinaluart_array, &dev_id, uart, limit, GFP_KERNEL);
++	if (ret)
++		return ret;
++
++	uart->id = dev_id;
++	port = &uart->port;
++
++	/* get membase */
++	port->membase = devm_platform_get_and_ioremap_resource(pdev, 0, NULL);
++	if (IS_ERR(port->membase))
++		return PTR_ERR(port->membase);
++
++	/* values not from device tree */
++	port->dev = &pdev->dev;
++	port->iotype = UPIO_MEM;
++	port->flags = UPF_BOOT_AUTOCONF;
++	port->ops = &spinaluart_ops;
++	port->regshift = 2;
++	port->fifosize = CONFIG_SERIAL_SPINALHDL_FIFO_SIZE;
++	port->iobase = 1;
++	port->type = PORT_UNKNOWN;
++	port->line = dev_id;
++	spin_lock_init(&port->lock);
++
++	return uart_add_one_port(&spinaluart_driver, &uart->port);
++}
++
++static int spinaluart_remove(struct platform_device *pdev)
++{
++	struct uart_port *port = platform_get_drvdata(pdev);
++	struct spinaluart_port *uart = to_spinaluart_port(port);
++
++	xa_erase(&spinaluart_array, uart->id);
++
++	return 0;
++}
++
++static const struct of_device_id spinaluart_of_match[] = {
++	{ .compatible = "spinalhdl,serial" },
++	{}
++};
++
++static struct platform_driver spinaluart_platform_driver = {
++	.probe = spinaluart_probe,
++	.remove = spinaluart_remove,
++	.driver = {
++		.name = "spinaluart",
++		.of_match_table = spinaluart_of_match,
++	},
++};
++
++#ifdef CONFIG_SERIAL_SPINALHDL_UART_CONSOLE
++static void spinaluart_console_write(struct console *co, const char *s,
++	unsigned int count)
++{
++	struct spinaluart_port *uart;
++	struct uart_port *port;
++	unsigned long flags;
++
++	uart = (struct spinaluart_port *)xa_load(&spinaluart_array, co->index);
++	port = &uart->port;
++
++	spin_lock_irqsave(&port->lock, flags);
++	uart_console_write(port, s, count, spinaluart_putchar);
++	spin_unlock_irqrestore(&port->lock, flags);
++}
++
++static int spinaluart_console_setup(struct console *co, char *options)
++{
++	struct spinaluart_port *uart;
++	struct uart_port *port;
++	int baud = 115200;
++	int bits = 8;
++	int parity = 'n';
++	int flow = 'n';
++
++	uart = (struct spinaluart_port *)xa_load(&spinaluart_array, co->index);
++	if (!uart)
++		return -ENODEV;
++
++	port = &uart->port;
++	if (!port->membase)
++		return -ENODEV;
++
++	if (options)
++		uart_parse_options(options, &baud, &parity, &bits, &flow);
++
++	return uart_set_options(port, co, baud, parity, bits, flow);
++}
++
++static struct console spinaluart_console = {
++	.name = "spinaluart",
++	.write = spinaluart_console_write,
++	.device = uart_console_device,
++	.setup = spinaluart_console_setup,
++	.flags = CON_PRINTBUFFER,
++	.index = -1,
++	.data = &spinaluart_driver,
++};
++
++static int __init spinaluart_console_init(void)
++{
++	register_console(&spinaluart_console);
++
++	return 0;
++}
++console_initcall(spinaluart_console_init);
++#endif
++
++static int __init spinaluart_init(void)
++{
++	int res;
++
++	res = uart_register_driver(&spinaluart_driver);
++	if (res)
++		return res;
++
++	res = platform_driver_register(&spinaluart_platform_driver);
++	if (res) {
++		uart_unregister_driver(&spinaluart_driver);
++		return res;
++	}
++
++	return 0;
++}
++
++static void __exit spinaluart_exit(void)
++{
++	platform_driver_unregister(&spinaluart_platform_driver);
++	uart_unregister_driver(&spinaluart_driver);
++}
++
++module_init(spinaluart_init);
++module_exit(spinaluart_exit);
++
++MODULE_AUTHOR("Angelic47 <admin@angelic47.com>");
++MODULE_DESCRIPTION("SpinalHDL UartCtrl IP Core Driver");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform: spinaluart");
